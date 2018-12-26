@@ -1,0 +1,187 @@
+---
+title: "STAR alignments for @RUN"
+date: '`r gsub("  ", " ", format(Sys.time(), "%B %e, %Y"))`'
+output:
+  html_document:
+    highlight: pygments
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, comment="", collapse=TRUE)
+```
+
+This guide describes the steps used to run [STAR] and other bioinformatic tools
+on the Fastq files in GNomEx.  The Qiagen small RNA library includes UMI tags to
+find PCR duplicates and these are extracted and marked using Perl scripts
+developed by Tim Parnell (`qiagen_smallRNA_umi_extractor` and `bam_umi_dedup`).
+
+All the commands listed in steps #2 to #7 are organized in a `cmd.txt` file,  which
+is used to send jobs to the [CHPC] clusters following the [Pysano] reference
+manual.  This file also includes [shell] scripts to parse sample names from
+FASTQ files and then read and write to different output files with that prefix.
+
+###1. Create reference
+
+Download the @NAME FASTA and GTF file from [Ensembl] release @VERSION and
+run [STAR] with the `genomeGenerate` option to create the reference database.
+The `sjdbGTFfile` option extracts splice junctions from the GTF file with a
+maximum possible overhang of @SJDB bases.
+
+```{bash star_ref, eval=FALSE}
+wget ftp://ftp.ensembl.org/pub/release-@VERSION/fasta/@LOWER_SPECIES/dna/@SPECIES.@ASSEMBLY.dna.@LEVEL.fa.gz
+wget ftp://ftp.ensembl.org/pub/release-@VERSION/gtf/@LOWER_SPECIES/@SPECIES.@ASSEMBLY.@VERSION.gtf.gz
+gunzip *.gz
+
+STAR --runMode genomeGenerate \
+     --genomeDir star@LENGTH \
+     --runThreadN @NCPU \
+     --genomeFastaFiles @SPECIES.@ASSEMBLY.dna.@LEVEL.fa \
+     --sjdbGTFfile @SPECIES.@ASSEMBLY.@VERSION.gtf \
+     --sjdbOverhang @SJDB
+```
+
+
+###2. Extract UMI tags
+
+Extract the UMI tags and save to `@SAMPLE_perfect_match_with_umi.fastq.gz`.
+
+```{bash umi_extract, eval=FALSE}
+qiagen_smallRNA_umi_extractor --input @FASTQ \
+     --out @SAMPLE_perfect_match_with_umi.fastq.gz \
+     --fail @SAMPLE_perfect_match_fail.fastq.gz
+```
+
+This script searches for Qiagen adapters with perfect matches and moves
+the 12 base UMI tag into the FASTQ header and removes the remaining adapter sequences.
+For example, a 65 bp sequence in the original FASTQ files is trimmed and saved to the perfect match FASTQ
+with the UMI tag in the header below.
+
+```{bash trim, eval=FALSE}
+# Original fastq.gz
+@HISEQ294:393:CCFHBANXX:1:1101:1241:2172 1:N:0:ACAGTG
+ACCAAAACATTCTCCTCCGCAAACTGTAGGCACCATCAATCCCCACCGTATCAGATCGGAAGAGC
+#<Sequence to align ><  Qiagen adapter >< UMI tag  ><Illumina adapter>
+
+# Perfect match fastq.gz
+@HISEQ294:393:CCFHBANXX:1:1101:1241:2172:UMI:CCCCACCGTATC 1:N:0:ACAGTG
+ACCAAAACATTCTCCTCCGCA
+```
+
+
+###3. Run FastQC
+
+Run [FastQC] on the perfect match FASTQ file.  This tool ouputs sequence length distributions,
+overrepresented sequences and many other statistics.
+
+```{bash fastq, eval=FALSE}
+fastqc -f fastq @SAMPLE_perfect_match_with_umi.fastq.gz
+```
+
+###4. Align reads
+
+Align the short reads using [STAR] version @STAR to the @NAME reference and output a BAM file
+ sorted by coordinates and unstranded bedGraph file.
+
+```{bash star_run, eval=FALSE}
+STAR --genomeDir star@LENGTH \
+     --readFilesIn @SAMPLE_perfect_match_with_umi.fastq.gz \
+     --readFilesCommand zcat \
+     --runThreadN @NCPU  \
+     --outSAMtype BAM SortedByCoordinate \
+     --outFilterMismatchNoverLmax 0.05 \
+     --outFilterMatchNmin 16 \
+     --outFilterScoreMinOverLread 0 \
+     --outFilterMatchNminOverLread 0 \
+     --outFilterMultimapNmax 50 \
+     --winAnchorMultimapNmax 200 \
+     --seedSearchStartLmax 13 \
+     --alignIntronMax 1 \
+     --outWigType bedGraph \
+     --outWigStrand Unstranded
+```
+
+###5. Mark duplicates
+
+Rename the STAR output BAM file and mark duplicates with the same UMI tag and position.
+
+```{r umi_depup, eval=FALSE}
+mv Aligned.sortedByCoord.out.bam @SAMPLE_dups.bam
+samtools index @SAMPLE_dups.bam
+bam_umi_dedup --in @SAMPLE_dups.bam --cpu @NCPU --mark --out @SAMPLE.bam
+```
+
+
+###6. Count features
+
+Run [featureCounts] version 1.5.1 to count aligned reads overlapping features in
+the GTF file (and ignore marked duplicates).   The first command counts unique
+reads and the second counts unique and multi-mapping reads by fractions.
+
+```{bash counts, eval=FALSE}
+featureCounts -T @NCPU -s 1 --largestOverlap --ignoreDup -a @SPECIES.@ASSEMBLY.@VERSION.gtf \
+      -o @SAMPLE.unique.counts @SAMPLE.bam
+featureCounts -T @NCPU -s 1 --largestOverlap --ignoreDup -a @SPECIES.@ASSEMBLY.@VERSION.gtf \
+      -M --fraction -o @SAMPLE.multi.counts @SAMPLE.bam
+```
+
+###7. Check quality
+
+Run Picard [CollectRnaSeqMetrics] to count the number of reads matching exons,
+UTRs, introns and intergenic regions and to calculate the normalized gene
+coverage from the top 1000 expressed transcripts. Finally, run [samtools idxstats] to
+count the number of reads per chromosome.
+
+###8. Summarize alignments
+
+[MultiQC] searches the @ALIGNDIR directory for analysis logs and compiles an
+HTML report that includes interactive summary tables and plots for commands
+in the `cmd.txt` file.
+
+```{bash multiqc, eval=FALSE}
+multiqc @ALIGNDIR
+```
+
+The General Statistics table at the top of the report includes summaries from
+FastQC like total sequences (M Seqs), STAR (M Aligned), featureCounts (M
+Assigned) and collectRNASeqMetrics (% rRNA and mRNA).   The remaining sections
+summarize outputs from each program.
+
+###9.  View alignments
+
+Load a BAM file into a database browser like [IGV] by clicking the URL link icon
+next to the BAM file name in GNomEx.   Copy and paste the link into IGV by
+selecting "File, Load from URL".   Search for a gene or zoom into a specific
+region to check alignments. If reads do not align with annotations, make sure
+the correct reference assembly is selected (hg38, mm10, rn6, etc.).
+
+To compare many samples, it's easier to load the bigWig files in GNomEx. The
+STAR aligner normalizes coverage files by default, so the units are reads per
+million mapped reads (RPM). In addition, separate coverage files are created for
+unique reads (\*.unique.bw) and unique plus multi-mapping reads
+(\*.multiple.bw).
+
+[IGV] displays a normalized coverage plot and RPM values at each position on the
+database.  If needed, multiply the RPM by the number of unique alignments from
+STAR in the [MultiQC] file to get the total reads at that base (for example,
+24.45863 RPM * 21873674 uniquely aligned reads/1000000 = 535 total reads).
+Finally, select multiple tracks and right click to set the same minimun and
+maximum values to display in the y-axis range by selecting Group Autoscale.
+
+###10. Differential Expression
+
+See the `DESeq.html` report for further details on the differential expression analysis.
+
+<br>
+
+[cutadapt]: http://cutadapt.readthedocs.io/en/stable/index.html
+[STAR]: https://github.com/alexdobin/STAR
+[Ensembl]: http://uswest.ensembl.org/info/data/ftp/index.html
+[Pysano]: http://healthcare.utah.edu/huntsmancancerinstitute/research/shared-resources/center-managed/bioinformatics/pysano
+[CHPC]: https://www.chpc.utah.edu/
+[shell]: http://tldp.org/LDP/abs/html/index.html
+[IGV]: http://software.broadinstitute.org/software/igv/
+[featureCounts]: http://bioinf.wehi.edu.au/featureCounts/
+[FastQC]: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
+[CollectRnaSeqMetrics]: https://broadinstitute.github.io/picard/command-line-overview.html#CollectRnaSeqMetrics
+[samtools idxstats]: http://www.htslib.org/
+[MultiQC]: http://multiqc.info/

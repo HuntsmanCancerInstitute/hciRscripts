@@ -1,0 +1,122 @@
+---
+title: "DESeq analysis for @run"
+date: '`r gsub("  ", " ", format(Sys.time(), "%B %e, %Y"))`'
+output: html_document
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, comment="# ", collapse=TRUE)
+library(hciR)
+library(readr)
+```
+
+This guide follows the [Bioconductor RNA-Seq workflow] to find differentially expressed
+genes using [DESeq2] version `r gsub("‘’", "", packageVersion("DESeq2"))` and the
+[hciR] package on Github to simplify the [R] code.
+
+### Load samples and counts
+
+Load a sample table with ids matching count column names.
+
+```{r load_samples, message=FALSE, echo=2:3}
+options(width=110)
+samples <- read_tsv("@samples")
+samples$@trt <- factor(samples$@trt, levels = @relevel)
+samples
+```
+
+Load the count matrix.
+
+```{r load_counts, message=FALSE, echo=-1}
+options(width=110)
+counts <- read_tsv("@counts")
+counts
+```
+
+Remove features with zero counts and @filter or fewer reads in every sample.
+
+```{r filter_counts}
+counts <- filter_counts(counts, n = @filter)
+```
+
+### Run DESeq
+
+Run `DESeq` using ~ @trt in the design formula and get the regularized log
+transforms (rlog) for sample visualizations.
+
+```{r run_DESeq}
+dds <- deseq_from_tibble(counts, samples, design = ~ @trt)
+rld <- r_log(dds)
+```
+
+### PCA plot
+
+Plot the first two principal components using the rlog values from the top 500
+variable genes.  You can select a region to zoom into this interactive highchart.
+
+```{r pcaplot}
+plot_pca(rld, "@trt", tooltip=@mouseover, width=700)
+```
+
+### Sample distances
+
+Cluster all the rlog values using the R function `dist` to calculate the Euclidean
+distance between samples.
+
+```{r plot_dist, fig.width=@figwidth, fig.height=@figheight}
+plot_dist(rld, "@trt")
+```
+
+### DESeq results
+
+
+Load the @name annotations from Ensembl version @version in the [hciRdata] package
+and get the DESeq results using a @fdr% false discovery rate (FDR).
+
+```{r results_all}
+library(hciRdata)
+res <- results_all(dds, @db, alpha = @padj, vs = "@vs", simplify = FALSE)
+```
+
+### Sample plots from the first contrast
+
+Plot fold changes and p-values in a volcano plot.
+
+```{r plot_volcano, fig.width=7, fig.height=5.5}
+plot_volcano(res[[1]], ggplot=TRUE, pvalue= -log10( sort(res[[1]]$padj)[20]))
+```
+
+Select the top 20 up- and down-regulated genes and cluster the scaled rlog values. The z-scores in the
+heatmap represent the number of standard deviations from the mean rlog value.
+
+```{r gene_heatmap1, fig.width=@figwidth, fig.height=6}
+x <- top_counts( res[[1]], rld, sort_fc = TRUE, padj=1)
+plot_genes(x, "@trt", scale="row", fontsize_row=8)
+```
+<br>
+
+Cluster the top 500 genes sorted by p-value and scale by rows.
+
+```{r gene_heatmap2, fig.width=@figwidth, fig.height=6}
+x <- top_counts( res[[1]], rld, top=500, padj=1)
+plot_genes(x, "@trt", scale="row", show_rownames=FALSE)
+```
+
+### Save results
+
+Save the DESeq results to a single Excel file in `DESeq.xlsx` and R objects to a
+binary data file to load into a new session. The  function will also output raw
+counts, rlog values, normalized counts, samples and gene annotations in the
+Excel file.
+
+```{r write_results_to_Excel}
+write_deseq(res, dds, rld, @db)
+save(res, dds, rld, @db, file="dds.rda")
+```
+<br>
+
+[Bioconductor RNA-Seq workflow]: http://www.bioconductor.org/help/workflows/rnaseqGene
+[DESeq2]: http://www.bioconductor.org/packages/release/bioc/html/DESeq2.html
+[hciR]: https://github.com/HuntsmanCancerInstitute/hciR
+[hciRdata]: https://github.com/HuntsmanCancerInstitute/hciRdata
+[R]: https://www.r-project.org
