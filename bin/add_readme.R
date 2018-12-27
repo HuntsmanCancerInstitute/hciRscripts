@@ -62,22 +62,21 @@ if(length(n)!=1) stop("Database should match human, mouse, fly, worm, pig, rat, 
 name <- x$name[n]
 species <- x$species[n]
 assembly <- x$assembly[n]
-STAR_version <- "2.5.4a"
+release <- as.numeric(opt$version)
+STAR_version <- "2.6.1b"
+if(release == 92) STAR_version <- "2.5.4a"
+if(release == 90) STAR_version <- "2.5.2b"
+
+
 ## fasta file name on FTP
 dna <- "toplevel"
 if(name %in% c("mouse", "human", "zebrafish")) dna <- "primary_assembly"
-## version 90 requires earlier STAR version and GRCz10
-if( as.numeric(opt$version <=90)){
-    STAR_version <- "2.5.2b"
-    if( assembly == "GRCz11"){
-         assembly <- "GRCz10"
-         dna <- "toplevel"
-    }
-}
+## version 90 uses GRCz10
+if( release ==90 & assembly == "GRCz11" )   assembly <- "GRCz10"
 
 ## Load R markdown template and replace @Variables
 rmd_txt <- paste0(install_dir, "/templates/README_", opt$sequencing, ".Rmd")
-rmd <- readr::read_lines(rmd_txt)
+rmd <- readr::read_lines(rmd_txt, skip=2)
 rmd <- stringr::str_replace_all(rmd, c(
    `@NAME`     = name,
    `@VERSION`  = opt$version,

@@ -1,3 +1,5 @@
+## Template for README.Rmd file for Qiagen miRNA Seq.  Run add_readme.R to replace @VARIABLES
+
 ---
 title: "STAR alignments for @RUN"
 date: '`r gsub("  ", " ", format(Sys.time(), "%B %e, %Y"))`'

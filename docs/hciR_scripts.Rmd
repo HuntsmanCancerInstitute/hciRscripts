@@ -52,7 +52,7 @@ Use the  `-h` option to view the help for more details.
 
 ###2. Run multiQC
 
-[MultiQC] searches the current working directory (`.`) for analysis logs and compiles a
+[MultiQC] searches the current working directory for analysis logs and compiles a
 report that includes interactive summary tables and plots for all seven commands
 in the `cmd.txt` files.
 
