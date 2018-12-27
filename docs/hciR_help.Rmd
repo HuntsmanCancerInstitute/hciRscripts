@@ -1,163 +1,36 @@
 ---
+title: "R script options"
 output:
-  pdf_document:
-    highlight: pygments
+  html_document
 ---
 
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(comment="# ", collapse=TRUE)
+```
 
-###1. Setup jobs
+### Setup jobs
 
 
-```{bash,  eval=FALSE}
+```{bash}
 setup_jobs.R -h
-
-Usage: setup_jobs.R [options]
-
-Creates a cmd.txt file and sample directories with Fastq file links in order to run STAR,
-featureCounts and quality metrics on the CHPC clusters using pysano.  The default is to align
-to the human reference configured for 50 bp reads in /tomato/dev/data/Human/GRCh38/star50
-
-Options:
-	-e EMAIL, --email=EMAIL
-		#e email or hci user name for pysano directive, required
-
-	-c CLUSTER, --cluster=CLUSTER
-		#c cluster name with at least 64 GB of RAM, default kingspeak
-
-	-a ANALYSIS, --analysis=ANALYSIS
-		#a Copy results to this Analysis directory
-
-	-r RUN, --run=RUN
-		Run ID with Fastq files to link
-
-	-d DATABASE, --database=DATABASE
-		Reference database, either human, mouse, fly or rat, default human
-
-	-l LENGTH, --length=LENGTH
-		Read length, default 50
-
-	-h, --help
-		Show this help message and exit
 ```
 
 
-###2.  Add README
+### Add README
 
 
-```{bash, eval=FALSE}
+```{bash}
 add_readme.R -h
-
-Usage: add_readme.R [options]
-
-Creates a README.html file for the  STAR RNA-seq workflow at HCI using defaults
-from the cmd.txt file in setup_jobs.R.
-
-Options:
-	-r RUN, --run=RUN
-		Run ID for report title
-
-	-a ANALYSIS, --analysis=ANALYSIS
-		Analysis ID for GNomEx file links
-
-	-d DATABASE, --database=DATABASE
-		Reference database, either human, mouse, fly or rat, default human
-
-   -o OUTPUT, --output=OUTPUT
-      STAR alignment output directory name, default Alignments
-
-	-l LENGTH, --length=LENGTH
-		Read length, default 50
-
-	-h, --help
-		Show this help message and exit
-
 ```
 
-###3.  Combine featureCounts output
+###  Combine featureCounts
 
-```{bash, eval=FALSE}
+```{bash}
 read_featureCounts.R -h
-
-Usage: read_featureCounts.R [options]
-
-Combine featureCount output files into a single count matix
-
-Options:
-	-d DIRECTORY, --directory=DIRECTORY
-		Directory with featuerCounts output files
-
-   -p PATTERN, --pattern=PATTERN
-      Pattern for matching output files
-
-	-o OUTPUT, --output=OUTPUT
-		Output file name, default counts.txt
-
-	-h, --help
-		Show this help message and exit
-
 ```
 
-###4.  Run DESeq2
+###  Run DESeq2
 
-```{bash, eval=FALSE}
-run_deseq.R  -h
-
-Usage: /home/BioApps/hciR/run_deseq.R [options]
-
-Loads a sample and count table and runs DESeq2 using all possible contrasts.  The results
-are saved to an Excel file and html report with sample visualizations.
-
-
-Options:
-	-s SAMPLES, --samples=SAMPLES
-		Tab-delimited file with ids in column 1 matching count column names
-                and treatment column for contrasts, default samples.txt
-
-	-c COUNTS, --counts=COUNTS
-		Tab-delimited count matrix file, default counts.txt
-
-	-d DATABASE, --database=DATABASE
-		Annotation database, either human, mouse, fly or rat, default human
-
-	-f FILTER, --filter=FILTER
-		Low count cutoff to filter counts, default 5
-
-	-p PADJ, --padj=PADJ
-		Adjusted p-value cutoff, default 0.05
-
-	-t TRT, --trt=TRT
-		Name of treatment column in sample table, default trt or treatment
-
-	-r RELEVEL, --relevel=RELEVEL
-		A comma-separated list to reorder treatments.  By default treatments are sorted
-                alphabetically, so use 'C,B,A' to compare C vs A, C vs B and B vs A
-
-	-m MOUSEOVER, --mouseover=MOUSEOVER
-		A comma-separated list of sample column names for tooltips in PCA plot, default is id column
-
-	-h, --help
-		Show this help message and exit
-```
-
-
-###5. Rename pysano output
-
-```{bash, eval=FALSE}
-rename_pysano.R -h
-
-Usage: rename_pysano.R [options]
-
-Running pysano with the #a option will output to separate directories like
-2017_04_21_16_15_2.892994.  This script will rename that directory using the
-first part of the bam file name to <directory>/<bam> like Alignments/14180X1
-
-Options:
-	-d DIRECTORY, --directory=DIRECTORY
-		New directory name, required
-
-	-p PATTERN, --pattern=PATTERN
-		Only move analysis directories matching this pattern, optional
-
-	-h, --help
-		Show this help message and exit
+```{bash}
+add_deseq.R -h
 ```

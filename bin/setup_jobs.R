@@ -22,7 +22,7 @@ opts <-  list(
    make_option(c("-v", "--version"), default="94",
          help="Ensembl release, default 94, only 90, 92, and 94 available"),
    make_option(c("-d", "--database"), default="human",
-         help="Reference database, either human, mouse, fly, worm, pig, rat, rabbit, sheep, yeast or zebrafish, default human"),
+         help="Reference database, default human or mouse, fly, worm, pig, rat, rabbit, sheep, yeast, zebrafish"),
     make_option(c("-l", "--length"), default="50",
        help="Read length for STAR reference, default 50 or 125")
 )
@@ -30,7 +30,7 @@ opts <-  list(
 parser <- OptionParser(option_list=opts, description = "
 Creates a cmd.txt file and sample directories with Fastq file links in order to run STAR,
 featureCounts and quality metrics on the CHPC clusters using pysano.  The default is to align
-to the human reference configured for 50 bp reads in /tomato/dev/data/Human/GRCh38/release92/star50")
+to the human reference configured for 50 bp reads")
   opt <- parse_args(parser)
   if( opt$email == "NA" ){
      print_help(parser)
@@ -97,7 +97,7 @@ if( opt$run == "NA" & opt$input == "NA"){
       if(sum(n)==0) stop("No fastq files modified after ", opt$modified)
       fastq_full <- fastq_full[n]
    }
-   
+
    fastq <- basename(fastq_full)
 
    ## add parsing option?  this gets string before _ or - or . for directory name

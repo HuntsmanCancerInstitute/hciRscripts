@@ -1,167 +1,112 @@
 ---
 title: "R scripts for RNA-Seq at HCI"
 output:
-  html_document:
-    highlight: pygments
+  html_document
 ---
 
 
-This guide describes how to run [STAR], [featureCounts], and quality metrics
-on the [CHPC] clusters and then run [multiQC] and [DESeq2] on the output files.
-The `R` scripts are located in `/home/BioApps/hciR`  on `uinta`, so add that directory
-to your path to run the `*.R` files below.
-
-
-###1. Collect input files from GNomEx
-
-The pipeline requires Fastq files and a sample table as input.  Select an
-experiment on GNomEx, click the `Download Files` option, drag the Fastq
-directory into the download window and finally select `FDT Command Line` to get
-a one-time link to download the files.  You will  need to replace
-`./fdtCommandLine.jar` with `/home/BioApps/fdt.jar` in the code to run on `unita`.
- Also, note that this will save the Fastq files into a directory named `14176R/Fastq`.
+This guide describes how to run alignments and quality metrics
+on the [CHPC] clusters and then run [multiQC] and other `R` scripts on the output files.
+The scripts are located in `/home/BioApps/hciR`  on `uinta`, so add that directory
+to your path to run the `*.R` files below.  If you have Fastq files starting with `14176X`, the basic
+steps to align 50 bp single-end reads to mouse are listed below.
 
 ```{bash fdt, eval=FALSE}
-java -jar /home/BioApps/fdt.jar -noupdates -pull -r -c hci-bio-app.hci.utah.edu \
-  -d ./ /scratch/fdtswap/fdt_sandbox_gnomex/22360178-1274-453a-aa2b-622c103d3a51/14176R
+setup_jobs.R -d mouse -i <fastq directory> -e <my hci email>
+pstart 14176X*
+module load multiqc
+multiqc .
+add_readme.R -d mouse -r 14176R -f 14176X1_170425_D00550_0428_ACB3GUANXX_4.txt.gz
+render.R -f README.Rmd
+read_featureCounts.R -d .
+run_deseq.R -c counts.txt -s samples.txt -d mouse
 ```
 
-Download the sample sheet on the `Experiment Design` tab in GNomEx.  I usually
-save the second column with sample IDs like 14176X1, sample names and any other
-columns with sample groups into a tab-delimited file named `samples.txt`.  If
-groups are not listed in the spreadsheet, then add  a trt column with sample
-groups for the DESeq2 contrasts.
 
+###1. Setup jobs
 
-###2. Setup jobs
-
-Run `setup_jobs.R` to create a `cmd.txt` file and to link Fastq files into separate sample directories.
+Run `setup_jobs.R` to create a `cmd.txt` file and link the Fastq files in the input
+directory to create 12 separate sample directories (14176X1 to 14176X12).
 
 
 ```{bash setup, eval=FALSE}
-setup_jobs.R -d mouse -i 14176R -e chris.stubben
+setup_jobs.R -d mouse -i Fastq -e chris.stubben
 # Created cmd.txt file for mouse star50
 # Linked 12 Fastq files
 ```
 
-If you have admin privileges, you can link directly to the run directory (and skip the FDT download)
-and write to the analysis directory in GNomEx.
-
-```{bash setup2, eval=FALSE}
-setup_jobs.R -d mouse -r 14176R -a A4752 -e chris.stubben
-```
 
 Review the `cmd.txt` file and check the commands to the run [cutadapt], [FastQC], [STAR],
-[featureCounts],  [CollectRnaSeqMetrics], and  [samtools idxstats] on the [CHPC] clusters.
-Use [pysano] to start the jobs with a pattern matching the sample directory names.
+[featureCounts], [RSEM], [CollectRnaSeqMetrics], and  [samtools idxstats].
+Use [pysano] to start the jobs by matching the sample directory names.
 
 ```{bash pstart, eval=FALSE}
 pstart 14176X*
 ```
 
-The default is to align 50 bp single end reads to the Ensembl 92 human reference
-in `/tomato/dev/data/Human/GRCh38/star50`. The `cmd.txt` file can also be
-configured to align paired end or the new Qiagen small RNA libraries with UMI
-tags,  with references from human, mouse, fly, pig, rabbit, rat, sheep, worm,
+The default is to align 50 bp single end reads to the Ensembl 94 human reference.
+The `cmd.txt` file can also be configured to align paired end or the new Qiagen small RNA libraries with UMI
+tags,  with references from human, mouse, fly, pig, rabbit, elephant, vervet, rat, sheep, worm,
 yeast, or zebrafish that are optimized with 50 or 125 splice junction databases.
 Use the  `-h` option to view the help for more details.
 
-###3. Run [multiQC]
+###2. Run multiQC
 
-`MultiQC` searches the current working directory for analysis logs and compiles a
-report that includes interactive summary tables and plots for all six commands
-in the `cmd.txt` file.
+[MultiQC] searches the current working directory (`.`) for analysis logs and compiles a
+report that includes interactive summary tables and plots for all seven commands
+in the `cmd.txt` files.
 
 ```{bash, eval=FALSE}
 module load multiqc
 multiqc .
 ```
 
-###4. Add README
+###3. Add README
 
 Add a markdown file with details on the [STAR] alignments, quality metrics and
 viewing BAM and BigWig files in [IGV].   Check the file and make any changes
 and then render the HTML report.
 
 ```{bash add_readme, eval=FALSE}
-add_readme.R -d mouse -r 14176R
+add_readme.R -d mouse -r 14176R -f 14176X1_170425_D00550_0428_ACB3GUANXX_4.txt.gz
 # Created README.Rmd markdown file for mouse star50
 # Run 'render.R -f README.Rmd' to create an html report
 render.R -f README.Rmd
+# processing file: README.Rmd
+# ...
+# Output created: README.html
 ```
 
-###5.  Combine [featureCounts] output
+###4.  Combine featureCount output
 
-Combine the `featureCount` output files into a single count matrix in `counts.txt`.
+Combine the [featureCounts] output files into a single count matrix in `counts.txt`.
 
 ```{bash, eval=FALSE}
 read_featureCounts.R -d .
+# Reading ./14176X1/14176X1.counts
+# Reading ./14176X2/14176X2.counts
+# ...
+# Saved 12 samples to counts.txt
 ```
 
-###6.  Run DESeq2
+###5.  Run DESeq2
 
-Add a markdown file with code to run DESeq2 using all possible contrasts.
-The results are saved to an Excel file and html report with sample visualizations.
+Add a markdown file with code to run DESeq2 using all possible contrasts.  This script
+requires a sample table as input with the first column matching the count column names and
+treatment column with sample groups. Render the markdown file to save an Excel file and
+ html report with sample visualizations.
 
 
 ```{bash, eval=FALSE}
 add_deseq.R  -c counts.txt -s samples.txt -d mouse
-
-Created DESeq.Rmd markdown file using human version 92 annotations
-Run 'render.R -f README.Rmd' to create an html report and Excel file
-
-
-```
-
-The parameterized Markdown file used to create the DESeq report is not very easy
-to follow.  I recommend creating your own DESeq markdown file (some
-[examples] are on Github) and run `render("DESeq.Rmd")` in the [RStudio server]
-on uinta at http://hci-uinta.hci.utah.edu:8787/.  The [hciR] package was
-designed to simplify R code so users can focus on writing Markdown reports with
-minimal R code.
-
-##Admin accounts
-
-If you have admin privileges in `/Repository/AnalysisData/`, you can add the -a option to `setup_jobs.R` and write the
-alignments results directly to the analysis directory.  Use `rename_pysano.R` to rename and move
-the pysano output.
-
-
-```{bash, eval=FALSE}
-cd /Repository/AnalysisData/2017/A4183
-rename_pysano.R -d Alignments -p 2017_04_27_22
-# Moving 2017_04_27_22_16_13.653475 to Alignments/14176X1
-# Moving 2017_04_27_22_16_13.881515 to Alignments/14176X10
-# Moving 2017_04_27_22_16_14.117057 to Alignments/14176X11
-...
+# Created DESeq.Rmd markdown file with mouse annotations from Ensembl version 94
+# Run 'render.R -f DESeq.Rmd' to create an html report
 ```
 
 
 
- For most users without admin privileges, the basic steps to align to mouse are
- listed below (note the first line downloads Fastq files from
-GNomex).
-
-```{bash,  eval=FALSE}
-java -jar /home/BioApps/fdt.jar <plus code pasted from FDT command line in GnomEx>
-setup_jobs.R -d mouse -r <path to fastq files above> -e <hci email>
-pstart 14176X*
-module load multiqc
-multiqc .
-add_readme.R -d mouse -r 14176R
-render.R -f README.Rmd
-read_featureCounts.R -d .
-add_deseq.R -r 14176R -d zebrafish -v 90
-render.R -f DESeq.Rmd
-```
-
-
-
-
-
-
-
-
+[cutadapt]: http://cutadapt.readthedocs.io/en/stable/index.html
+[RSEM]: https://deweylab.github.io/RSEM/
 [README.html]: ./README.html
 [help pages]: ./hciR_help.html
 [RStudio server]: http://hci-uinta.hci.utah.edu:8787/
@@ -174,7 +119,7 @@ render.R -f DESeq.Rmd
 [samtools idxstats]: http://www.htslib.org/
 [Pysano]: http://healthcare.utah.edu/huntsmancancerinstitute/research/shared-resources/center-managed/bioinformatics/pysano
 [CHPC]: https://www.chpc.utah.edu/
-[multiQC]: http://multiqc.info/
+[MultiQC]: http://multiqc.info/
 [DESeq2]: http://www.bioconductor.org/packages/release/bioc/html/DESeq2.html
 [hciR]: https://github.com/HuntsmanCancerInstitute/hciR
 [IGV]: http://software.broadinstitute.org/software/igv/

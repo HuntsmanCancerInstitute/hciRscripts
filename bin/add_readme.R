@@ -14,7 +14,7 @@ opts <-  list(
     make_option(c("-f", "--fastq"), default=NULL,
           help="Sample fastq file name, will check /Repository/MicroarrayData with run ID if missing"),
     make_option(c("-d", "--database"), default="human",
-          help="Reference database, either human, mouse, fly, worm, pig, rat, rabbit, sheep, yeast or zebrafish, default human"),
+          help="Reference database, default human or mouse, fly, worm, pig, rat, rabbit, sheep, yeast, zebrafish"),
     make_option(c("-v", "--version"), default="94",
           help="Ensembl release, default 94"),
     make_option(c("-n", "--ncpu"), default="24",

@@ -2,8 +2,7 @@
 title: "STAR alignments for @RUN"
 date: '`r gsub("  ", " ", format(Sys.time(), "%B %e, %Y"))`'
 output:
-  html_document:
-    highlight: pygments
+  html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -136,8 +135,8 @@ million mapped reads (RPM). In addition, separate coverage files are created for
 unique reads (\*.unique.bw) and unique plus multi-mapping reads
 (\*.multiple.bw).
 
-[IGV] displays a normalized coverage plot and RPM values at each position on the
-database.  If needed, multiply the RPM by the number of unique alignments from
+[IGV] displays a normalized coverage plot and RPM values at each position.
+If needed, multiply the RPM by the number of unique alignments from
 STAR in the [MultiQC] file to get the total reads at that base (for example,
 24.45863 RPM * 21873674 uniquely aligned reads/1000000 = 535 total reads).
 Finally, select multiple tracks and right click to set the same minimun and
