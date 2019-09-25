@@ -7,8 +7,10 @@ suppressPackageStartupMessages(library("optparse"))
 opts <-  list(
    make_option(c("-d", "--directory"), default="NA",
          help="New directory name, required"),
-   make_option(c("-p", "--pattern"), default="^2018",
-         help="Only move analysis directories matching this pattern, optional")
+   make_option(c("-s", "--separator"), default="._",
+         help="Parse ID to separator, default . or _"),
+   make_option(c("-p", "--pattern"), default="^20",
+         help="Only move analysis directories matching this pattern, default ^20")
 )
 
 parser <- OptionParser(option_list=opts, description = "
@@ -36,7 +38,9 @@ if( any(duplicated(old_dir)) ) stop("No unique ID to rename directory since more
 
 old_file <- sapply(y, "[[", 2)
 ## use id before _ or .
-id  <- gsub("([^_.]+).*", "\\1", old_file)
+id  <- gsub( paste0("[", opt$separator, "].*"), "", old_file)
+if(length(id)==0) stop("Problem parsing IDs")
+if(any(nchar(id)==0)) stop("Some IDs are empty strings")
 new_dir <- paste0(opt$directory,  "/", id)
 
 if(!dir.exists(opt$directory))  dir.create( opt$directory)

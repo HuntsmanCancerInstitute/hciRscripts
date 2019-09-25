@@ -1,4 +1,4 @@
-## Template for cmd.txt file for Qiagen miRNA.  Run setup_jobs.R to replace @VARIABLES
+## Template for cmd.txt file for NEB miRNA.  Run setup_jobs.R to replace @VARIABLES
 
 #e @EMAIL -b
 #c @CLUSTER
@@ -20,22 +20,20 @@ FEATCOUNT=$APP/Subread/1.6.3/bin/featureCounts
 SAMTOOLS=$APP/samtools/1.5/samtools
 BIGWIG=$APP/UCSC/bedGraphToBigWig
 PICARD=$APP/picard/2.9.0/picard.jar
-UMI_EXTRACTOR=$APP/modulesoftware/qiagen_smallRNA_umi_extractor
-UMI_DEDUP=$APP/modulesoftware/bam_umi_dedup
+CUTADAPT=$APP/modulesoftware/cutadapt
 
 ## GET sample prefix from Fastq file name
 GZ=`echo *@FASTQ`
 OUT=`echo ${GZ%%_*}`
 
-$UMI_EXTRACTOR --input $GZ \
---out ${OUT}_perfect_match_with_umi.fastq.gz \
---fail ${OUT}_perfect_match_fail.fastq.gz
+# CUTADAPT v 1.16
+$CUTADAPT -j $NCPU -O 6 -m 16 -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA -o $OUT.fq $GZ
 
-$FASTQC -T $NCPU -f fastq ${OUT}_perfect_match_with_umi.fastq.gz
+# FASTQ
+$FASTQC -T $NCPU -f fastq $OUT.fq
 
 $STAR --genomeDir $INDEX \
---readFilesIn ${OUT}_perfect_match_with_umi.fastq.gz \
---readFilesCommand zcat \
+--readFilesIn $OUT.fq \
 --runThreadN $NCPU \
 --outSAMtype BAM SortedByCoordinate \
 --outFilterMismatchNoverLmax 0.05 \
@@ -49,21 +47,18 @@ $STAR --genomeDir $INDEX \
 --outWigType bedGraph \
 --outWigStrand Unstranded
 
-mv Aligned.sortedByCoord.out.bam ${OUT}_dups.bam
+mv Aligned.sortedByCoord.out.bam $OUT.bam
 mv Log.final.out $OUT.Log.final.out
 rm Log.out Log.progress.out SJ.out.tab
 
 # Samtools
-$SAMTOOLS index ${OUT}_dups.bam
-
-$UMI_DEDUP --in ${OUT}_dups.bam --cpu 12 --mark --out $OUT.bam
-
 $SAMTOOLS index $OUT.bam
 $SAMTOOLS idxstats $OUT.bam | sort -V > $OUT.idxstats
 
-# count multimappers but ignore marked duplicates
-$FEATCOUNT -T $NCPU -s 1 -M --fraction --largestOverlap --ignoreDup -a $GTF -o $OUT.multi.counts $OUT.bam
-$FEATCOUNT -T $NCPU -s 1 --largestOverlap --ignoreDup -a $GTF -o $OUT.unique.counts $OUT.bam
+# count multimappers
+$FEATCOUNT -T $NCPU -s 1 -M --fraction --largestOverlap -a $GTF -o $OUT.multi.counts $OUT.bam
+$FEATCOUNT -T $NCPU -s 1 --largestOverlap -a $GTF -o $OUT.unique.counts $OUT.bam
+$FEATCOUNT -T $NCPU -s 1 --largestOverlap -a $GTF -o $OUT.unique.biotypes -g gene_biotype $OUT.bam
 
 /usr/bin/java -Xmx16G -jar $PICARD CollectRnaSeqMetrics REF_FLAT=$REFFLAT \
 STRAND=SECOND_READ_TRANSCRIPTION_STRAND RIBOSOMAL_INTERVALS=$RIBOINT \
@@ -73,6 +68,6 @@ I=$OUT.bam O=$OUT.rna_metrics
 $BIGWIG Signal.Unique.str1.out.bg  $CHROM $OUT.unique.bw
 $BIGWIG Signal.UniqueMultiple.str1.out.bg $CHROM $OUT.multi.bw
 
-rm *dups.bam
+rm $OUT.fq
 rm Signal.Unique.str1.out.bg
 rm Signal.UniqueMultiple.str1.out.bg

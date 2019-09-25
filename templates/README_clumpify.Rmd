@@ -1,4 +1,4 @@
-## Template for README.Rmd file for paired end RNA-Seq.  Run add_readme.R to replace @VARIABLES
+## Template for README.Rmd file for paired end RNA-Seq with clumpify step to remove optical duplicates on NovaSeq.  Run add_readme.R to replace @VARIABLES
 
 ---
 title: "STAR alignments for @RUN"
@@ -12,7 +12,7 @@ knitr::opts_chunk$set(warning=FALSE, comment="", collapse=TRUE)
 ```
 
 This guide describes the steps used to run [STAR] and other bioinformatic tools
-on the Fastq files in GNomEx. All the commands listed in steps #2 to #6 are
+on the Fastq files in GNomEx. All the commands listed in steps #2 to #7 are
 organized in a `cmd.txt` file,  which is used to send jobs to the [CHPC]
 clusters following the [Pysano] reference manual.  This file also includes
 [shell] scripts to parse sample names from FASTQ files and then read and write
@@ -38,7 +38,22 @@ STAR --runMode genomeGenerate \
      --sjdbOverhang @SJDB
 ```
 
-### 2. Trim adapters
+### 2. Remove optical duplicates
+
+Optical duplicates are a common [problem] on NovaSeq runs and can be removed
+before aligning using [clumpify].  Run the tool with the default settings using
+`BBmap` version v38.34 (see `optical_dups.txt` for total reads removed).  Note that
+samples on the NovaSeq are often split into two different lanes and the code in
+`cmd.txt` will first join all reads into a single `@SAMPLE.cat_R1.fq.gz` or `R2` file below.
+
+
+```{bash clump, eval=FALSE}
+clumpify.sh in1=@SAMPLE.cat_R1.fq.gz in2=@SAMPLE.cat_R2.fq.gz \
+  out1=@SAMPLE.clump1.fq.gz out2=@SAMPLE.clump2.fq.gz \
+  dupedist=12000 dedupe=t optical=t
+```
+
+### 3. Trim adapters
 
 Trim the Illumina adpater sequence using [cutadapt] version 1.16.  The -O
 option starts trimming after 6 matching bases and -m option will discard trimmed
@@ -46,13 +61,13 @@ reads shorter than 20 bases
 
 ```{bash cutadapt, eval=FALSE}
 cutadapt -j @NCPU -O 6 -m 20 \
- -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA \
- -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT \
- -o @SAMPLE.1.fq -p @SAMPLE.2.fq \
-  @FASTQ
+  -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA \
+  -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT \
+  -o @SAMPLE.1.fq -p @SAMPLE.2.fq \
+  @SAMPLE.clump1.fq.gz @SAMPLE.clump2.fq.gz
 ```
 
-### 3. Run FastQC
+### 4. Run FastQC
 
 Run [FastQC] on the trimmed fastq file.  This ouputs sequence length distributions,
 overrepresented sequences and many other statistics.
@@ -62,7 +77,7 @@ fastqc -f fastq @SAMPLE.1.fq
 fastqc -f fastq @SAMPLE.2.fq
 ```
 
-### 4. Align reads
+### 5. Align reads
 
 Align the trimmed reads using [STAR] version version @STAR to the @NAME
 reference in two pass mode and output a BAM file sorted by
@@ -80,7 +95,7 @@ STAR --genomeDir star@LENGTH \
      --outWigStrand Unstranded
 ```
 
-### 5. Count features
+### 6. Count features
 
 Rename the STAR output BAM file and run [featureCounts] version 1.6.3 to count uniquely
 aligned reads overlapping features in the GTF file.
@@ -96,14 +111,14 @@ in `@SAMPLE.isoforms.results` or `@SAMPLE.genes.results`.  These count tables ar
 in the differential expression analyses unless requested.
 
 
-### 6. Check quality
+### 7. Check quality
 
 Run Picard [CollectRnaSeqMetrics] to count the number of reads matching exons,
 UTRs, introns and intergenic regions and to calculate the normalized gene
 coverage from the top 1000 expressed transcripts. Finally, run [samtools idxstats] to
 count the number of reads per chromosome.
 
-### 7. Summarize alignments
+### 8. Summarize alignments
 
 [MultiQC] searches the @ALIGNDIR directory for analysis logs and compiles an
 HTML report that includes interactive summary tables and plots for all commands
@@ -118,7 +133,7 @@ FastQC like total sequences (M Seqs), STAR (M Aligned), featureCounts (M
 Assigned) and collectRNASeqMetrics (% rRNA and mRNA).   The remaining sections
 summarize outputs from each program.
 
-### 8.  View alignments
+### 9.  View alignments
 
 Load a BAM file into a database browser like [IGV] by clicking the URL link icon
 next to the BAM file name in GNomEx.   Copy and paste the link into IGV by
@@ -144,14 +159,15 @@ STAR in the [MultiQC] file to get the total reads at that base (for example,
 Finally, select multiple tracks and right click to set the same minimun and
 maximum values to display in the y-axis range by selecting Group Autoscale.
 
-### 9. Differential Expression
+### 10. Differential Expression
 
 See the `DESeq.html` report for further details on the differential expression analysis using
 [DESeq2].
 
 <br>
 
-
+[problem]: https://sequencing.qcfail.com/articles/illumina-patterned-flow-cells-generate-duplicated-sequences/
+[clumpify]: https://jgi.doe.gov/data-and-tools/bbtools/bb-tools-user-guide/clumpify-guide/
 [DESeq2]: http://www.bioconductor.org/packages/release/bioc/html/DESeq2.html
 [RSEM]: https://deweylab.github.io/RSEM/
 [cutadapt]: http://cutadapt.readthedocs.io/en/stable/index.html

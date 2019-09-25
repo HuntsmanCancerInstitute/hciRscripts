@@ -21,7 +21,7 @@ is used to send jobs to the [CHPC] clusters following the [Pysano] reference
 manual.  This file also includes [shell] scripts to parse sample names from
 FASTQ files and then read and write to different output files with that prefix.
 
-###1. Create reference
+### 1. Create reference
 
 Download the @NAME FASTA and GTF file from [Ensembl] release @VERSION and
 run [STAR] with the `genomeGenerate` option to create the reference database.
@@ -42,7 +42,7 @@ STAR --runMode genomeGenerate \
 ```
 
 
-###2. Extract UMI tags
+### 2. Extract UMI tags
 
 Extract the UMI tags and save to `@SAMPLE_perfect_match_with_umi.fastq.gz`.
 
@@ -69,7 +69,7 @@ ACCAAAACATTCTCCTCCGCA
 ```
 
 
-###3. Run FastQC
+### 3. Run FastQC
 
 Run [FastQC] on the perfect match FASTQ file.  This tool ouputs sequence length distributions,
 overrepresented sequences and many other statistics.
@@ -78,7 +78,7 @@ overrepresented sequences and many other statistics.
 fastqc -f fastq @SAMPLE_perfect_match_with_umi.fastq.gz
 ```
 
-###4. Align reads
+### 4. Align reads
 
 Align the short reads using [STAR] version @STAR to the @NAME reference and output a BAM file
  sorted by coordinates and unstranded bedGraph file.
@@ -101,7 +101,7 @@ STAR --genomeDir star@LENGTH \
      --outWigStrand Unstranded
 ```
 
-###5. Mark duplicates
+### 5. Mark duplicates
 
 Rename the STAR output BAM file and mark duplicates with the same UMI tag and position.
 
@@ -112,7 +112,7 @@ bam_umi_dedup --in @SAMPLE_dups.bam --cpu @NCPU --mark --out @SAMPLE.bam
 ```
 
 
-###6. Count features
+### 6. Count features
 
 Run [featureCounts] version 1.5.1 to count aligned reads overlapping features in
 the GTF file (and ignore marked duplicates).   The first command counts unique
@@ -125,14 +125,14 @@ featureCounts -T @NCPU -s 1 --largestOverlap --ignoreDup -a @SPECIES.@ASSEMBLY.@
       -M --fraction -o @SAMPLE.multi.counts @SAMPLE.bam
 ```
 
-###7. Check quality
+### 7. Check quality
 
 Run Picard [CollectRnaSeqMetrics] to count the number of reads matching exons,
 UTRs, introns and intergenic regions and to calculate the normalized gene
 coverage from the top 1000 expressed transcripts. Finally, run [samtools idxstats] to
 count the number of reads per chromosome.
 
-###8. Summarize alignments
+### 8. Summarize alignments
 
 [MultiQC] searches the @ALIGNDIR directory for analysis logs and compiles an
 HTML report that includes interactive summary tables and plots for commands
@@ -147,7 +147,7 @@ FastQC like total sequences (M Seqs), STAR (M Aligned), featureCounts (M
 Assigned) and collectRNASeqMetrics (% rRNA and mRNA).   The remaining sections
 summarize outputs from each program.
 
-###9.  View alignments
+### 9.  View alignments
 
 Load a BAM file into a database browser like [IGV] by clicking the URL link icon
 next to the BAM file name in GNomEx.   Copy and paste the link into IGV by
@@ -168,7 +168,7 @@ STAR in the [MultiQC] file to get the total reads at that base (for example,
 Finally, select multiple tracks and right click to set the same minimun and
 maximum values to display in the y-axis range by selecting Group Autoscale.
 
-###10. Differential Expression
+### 10. Differential Expression
 
 See the `DESeq.html` report for further details on the differential expression analysis.
 
@@ -177,7 +177,7 @@ See the `DESeq.html` report for further details on the differential expression a
 [cutadapt]: http://cutadapt.readthedocs.io/en/stable/index.html
 [STAR]: https://github.com/alexdobin/STAR
 [Ensembl]: http://uswest.ensembl.org/info/data/ftp/index.html
-[Pysano]: http://healthcare.utah.edu/huntsmancancerinstitute/research/shared-resources/center-managed/bioinformatics/pysano
+[Pysano]: https://uofuhealth.utah.edu/huntsman/shared-resources/gba/bioinformatics/infrastructure/pysano.php
 [CHPC]: https://www.chpc.utah.edu/
 [shell]: http://tldp.org/LDP/abs/html/index.html
 [IGV]: http://software.broadinstitute.org/software/igv/

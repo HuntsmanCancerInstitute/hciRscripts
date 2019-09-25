@@ -58,6 +58,7 @@ mv Log.final.out $OUT.Log.final.out
 
 # featureCounts -s 2
 $FEATCOUNT -T $NCPU -p -s 2 --largestOverlap -a $GTF -o $OUT.counts $OUT.bam
+$FEATCOUNT -T $NCPU -p -s 2 --largestOverlap -a $GTF -o $OUT.biotypes -g gene_biotype $OUT.bam
 
 # Samtools
 $SAMTOOLS index $OUT.bam

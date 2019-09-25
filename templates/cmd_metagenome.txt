@@ -1,0 +1,71 @@
+## Template for cmd.txt file for HUMAnN2 metagenome pipeline.  Run setup_jobs.R to replace @VARIABLES
+
+#e @EMAIL -b
+#c @CLUSTER
+@ANALYSIS
+
+# Paths
+APP=/tomato/dev/app
+FASTQC=$APP/FastQC/0.11.5/fastqc
+SAMTOOLS=$APP/samtools/1.5/samtools
+CLUMPIFY=$APP/BBmap/v38.34/clumpify.sh
+BOWTIE2=$APP/bowtie2/2.3.5.1
+TRIMMOMATIC=$APP/Trimmomatic/0.39
+DB=/tomato/dev/data/Human/GRCh38/bowtie2/GRCh38
+
+R1=`echo *R1_001.fastq.gz`
+R2=`echo *R2_001.fastq.gz`
+
+# GET sample prefix
+OUT=`echo ${R1%%_*}`
+
+# if multiple lanes
+# cat $R1 > $OUT.R1.fq.gz
+# cat $R2 > $OUT.R2.fq.gz
+
+mv $R1 $OUT.R1.fq.gz
+mv $R2 $OUT.R2.fq.gz
+
+# Remove optical duplicates with CLUMPIFY
+$CLUMPIFY in1=$OUT.R1.fq.gz in2=$OUT.R2.fq.gz out1=$OUT.fq.gz \
+ out2=$OUT.clump2.fq.gz dupedist=12000 dedupe=t optical=t
+
+# FASTQC for both reads?
+$FASTQC -T $NCPU -f fastq $OUT.fq.gz
+# $FASTQC -T $NCPU -f fastq $OUT.clump2.fq.gz
+
+module load bioBakery/1.7
+
+#remove human reads
+runbioBakery kneaddata \
+ -t $NCPU \
+ --input $OUT.fq.gz \
+ --input $OUT.clump2.fq.gz \
+ -o kneaddata \
+ -db $DB \
+ --bowtie2 $BOWTIE2 \
+ --bowtie2-options "--very-sensitive --dovetail" \
+ --trimmomatic $TRIMMOMATIC \
+ --trimmomatic-options "SLIDINGWINDOW:4:20 MINLEN:50" \
+ --remove-intermediate-output
+
+runbioBakery kneaddata_read_count_table --input kneaddata --output kneaddata/${OUT}_summary.txt
+
+## cat paired but not paired_contam
+cat kneaddata/*paired_1.fastq kneaddata/*paired_2.fastq > $OUT.fq
+
+runbioBakery humann2 \
+ --threads $NCPU \
+ --input $OUT.fq \
+ --output humann2 \
+ --protein-database /uufs/chpc.utah.edu/sys/installdir/bioBakery/databases/uniref \
+ --nucleotide-database /uufs/chpc.utah.edu/sys/installdir/bioBakery/databases/chocophlan
+
+## delete fastqs
+rm $OUT.R1.fq.gz $OUT.R2.fq.gz
+rm $OUT.fq.gz $OUT.clump2.fq.gz
+rm $OUT.fq
+
+## delete sam files and bowtie2 index in humann2_temp
+rm humann2/${OUT}_humann2_temp/*sam
+rm humann2/${OUT}_humann2_temp/*bt2

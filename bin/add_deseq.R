@@ -7,13 +7,13 @@ opts <-  list(
    make_option(c("-r", "--run"), default=NULL,
         help="Run ID for report title"),
    make_option(c("-d", "--database"), default="human",
-        help="Annotation database, default human or mouse, fly, worm, pig, rat, rabbit,
-                sheep, yeast, zebrafish"),
-   make_option(c("-v", "--version"), default="92",
-        help="Ensembl release, default 92"),
+        help="Annotation database, default human or mouse, elephant, fly, pig,
+     rat, rabbit, sheep,  worm, vervet, yeast or zebrafish"),
+   make_option(c("-v", "--version"), default="96",
+        help="Ensembl release, default 96"),
    make_option(c("-s", "--samples"), default="samples.txt",
         help="Tab-delimited file with ids in column 1 matching count column names
-                and a treatment column for contrasts, default samples.txt"),
+     and a treatment column for contrasts, default samples.txt"),
    make_option(c("-t", "--trt"), default="trt",
         help="Name of treatment column in sample table, default trt."),
    make_option(c("-c", "--counts"), default="counts.txt",
@@ -26,13 +26,13 @@ opts <-  list(
         help="Compare groups to a specific treatment, default is all vs. all"),
     make_option(c("-l", "--levels"), default=NULL,
         help="A comma-separated list to reorder treatments.  By default treatments are sorted
-                alphabetically, so use 'C,B,A' to compare C vs A, C vs B and B vs A"),
+     alphabetically, so use 'C,B,A' to compare C vs A, C vs B and B vs A"),
     make_option(c("-m", "--mouseover"), default="id",
         help="A comma-separated list of sample column names for tooltips in PCA plot, default is id column")
 )
 
 parser <- OptionParser(option_list=opts, description = "
-Create a DESeq markdown file with command to run DESeq2
+Create a DESeq markdown file with commands to run DESeq2
 ")
 opt <- parse_args(parser)
 
@@ -48,7 +48,8 @@ if(file.exists("DESeq.Rmd")) stop("DESeq.Rmd file already exists")
 
 cmdArgs <- commandArgs(trailingOnly = FALSE)
 n <- grep("--file=", cmdArgs)
-install_dir <-  normalizePath(gsub("--file=|/bin/.*", "", cmdArgs[n]))
+install_dir <- normalizePath(gsub("--file=", "", cmdArgs[n]))
+install_dir <- gsub( "/[^/]*$", "", install_dir)
 
 ## TO DO - allow 2 or more columns for trt (and paste together in design formula ~trt + cell)
 
@@ -75,13 +76,13 @@ x <- strsplit(opt$mouseover, ", *")[[1]]
 if(!all(x %in% names(samples))) stop("Mouseover names are missing from sample table")
 opt$mouseover <- capture.output(dput(x))
 
-db <- c("human", "mouse", "fly", "sheep", "pig", "rat", "rabbit", "worm", "yeast", "zebrafish")
+db <- c("human", "mouse", "fly", "sheep", "pig", "rat", "rabbit", "worm", "vervet", "elephant", "yeast", "zebrafish")
 if(!opt$database %in% db){
-   stop("Database should match human, mouse, fly, pig, rat, rabbit, sheep,  worm, yeast or zebrafish.")
+   stop("Database should match human, mouse, elephant, fly, pig, rat, rabbit, sheep,  worm, vervet, yeast or zebrafish.")
 }
 db1 <- paste0(opt$database, opt$version)
 
-if(!opt$version %in% c("90", "92")) message("WARNING: only Ensembl version 90 and 92 are available in hciR_data.
+if(!opt$version %in% c("90", "92", "94", "96")) message("WARNING: Ensembl version is not available in hciRdata.
 You may need to update the gene annotation section and use read_biomart instead")
 if(is.null(opt$design)) opt$design <- opt$trt
 

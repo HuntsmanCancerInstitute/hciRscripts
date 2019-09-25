@@ -34,3 +34,10 @@ read_featureCounts.R -h
 ```{bash}
 add_deseq.R -h
 ```
+
+
+###  Render HTML reports
+
+```{bash}
+render.R -h
+```

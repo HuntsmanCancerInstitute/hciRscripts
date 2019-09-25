@@ -8,7 +8,7 @@ opts <-  list(
    make_option(c("-c", "--cluster"), default="kingspeak",
          help="#c cluster name for pysano with at least 64 GB of RAM, default kingspeak"),
    make_option(c("-s", "--sequencing"), default="single",
-         help="single, paired or miRNA sequencing"),
+         help="single, paired, novaseq, qiagen, NEB or metagenome"),
    make_option(c("-i", "--input"), default="NA",
          help="Input directory with Fastq files (either absolute path or relative path in current directory)"),
    make_option(c("-f", "--fastq"), default=".gz",
@@ -19,10 +19,11 @@ opts <-  list(
          help="Run ID in /Repository/MicroarryData, optional"),
    make_option(c("-a", "--analysis"), default="",
          help="Save files to /Repository/AnalysisData, optional"),
-   make_option(c("-v", "--version"), default="94",
-         help="Ensembl release, default 94, only 90, 92, and 94 available"),
+   make_option(c("-v", "--version"), default="96",
+         help="Ensembl release, default 96, only 90, 92, 94 and 96 available"),
    make_option(c("-d", "--database"), default="human",
-         help="Reference database, default human or mouse, fly, worm, pig, rat, rabbit, sheep, yeast, zebrafish"),
+         help="Reference database, default human or mouse, elephant, fly, worm, pig,
+     rat, rabbit, sheep, yeast, zebrafish"),
     make_option(c("-l", "--length"), default="50",
        help="Read length for STAR reference, default 50 or 125")
 )
@@ -30,7 +31,7 @@ opts <-  list(
 parser <- OptionParser(option_list=opts, description = "
 Creates a cmd.txt file and sample directories with Fastq file links in order to run STAR,
 featureCounts and quality metrics on the CHPC clusters using pysano.  The default is to align
-to the human reference configured for 50 bp reads")
+to single-end 50 bp reads the human reference.")
   opt <- parse_args(parser)
   if( opt$email == "NA" ){
      print_help(parser)
@@ -43,28 +44,32 @@ if(file.exists( "cmd.txt")){
    if( !grepl("@", opt$email )) opt$email <- paste0( opt$email, "@hci.utah.edu")
    ## STAR version should match version used to create index
    release <- as.numeric(opt$version)
-   if(!release %in% c(90, 92, 94)) stop("Version should be 90, 92 or 94")
-   STAR_version <- "2.6.1b"
+   if(!release %in% c(90, 92, 94, 96)) stop("Version should be 90, 92, 94 or 96")
+   STAR_version <- "2.7.0f"
+   if(release == 94) STAR_version <- "2.6.1b"
    if(release == 92) STAR_version <- "2.5.4a"
    if(release == 90) STAR_version <- "2.5.2b"
 
    if( opt$analysis != "" ) opt$analysis <- paste0("#a ", opt$analysis)
    if(!opt$length %in% c("50", "125")) message("Length should be 50 or 125.  Please check if star", opt$length, " exists")
-   if(!opt$sequencing %in% c("single", "paired", "miRNA")) stop("Sequencing should be single, paired or miRNA")
-
+   if(!opt$sequencing %in% c("single", "paired", "qiagen", "clumpify", "novaseq", "NEB", "metagenome", "metatranscriptome")){
+       stop("Sequencing should be single, paired, novaseq, miRNA, NEB, metagenome or metatranscriptome")
+   }
+   if(opt$sequencing == "novaseq") opt$sequencing == "clumpify"
    x <- read.delim("/home/BioApps/hciR/STAR_ref_dbs.txt", stringsAsFactors=FALSE)
    refdb <- stringr::str_replace_all(opt$database, c(fly = "Drosophila", fruitfly = "Drosophila",
                   worm = "C_elegans", yeast = "S_cerevisiae", Homo ="Human", Mus = "Mouse"))
 
    n <- grep(refdb, x$dir, ignore=TRUE)
-   if(length(n)!=1) stop("Database should match human, mouse, fly, worm, pig, rat, rabbit, sheep, yeast or zebrafish.")
+   if(length(n)!=1) stop("Database should match human, mouse, elephant, fly, worm, pig, rat, rabbit, sheep, yeast or zebrafish.")
    species <- x$species[n]
    assembly <- x$assembly[n]
    tomato_dir <- x$dir[n]
-   ## old GRCz10 assembly for version 90
-   if( release ==90){
-       if( assembly == "GRCz11") assembly <- "GRCz10"
-    }
+   ## old assemblies
+   if(assembly == "GRCz11" & release == 90) assembly <- "GRCz10"
+   if(assembly == "BDGP6.22" & release != 96) assembly <- "BDGP6"
+
+
    cmd_txt <- paste0("/home/BioApps/hciR/templates/cmd_", opt$sequencing, ".txt")
    cmd <- readr::read_lines(cmd_txt, skip=2)
    cmd <- stringr::str_replace_all(cmd, c(`@EMAIL` = opt$email, `@CLUSTER` = opt$cluster,
@@ -101,7 +106,8 @@ if( opt$run == "NA" & opt$input == "NA"){
    fastq <- basename(fastq_full)
 
    ## add parsing option?  this gets string before _ or - or . for directory name
-  ids <- gsub("([^_.-]+).*", "\\1", fastq)
+   # ids <- gsub("([^_.-]+).*", "\\1", fastq)
+   ids <- gsub("([^_.]+).*", "\\1", fastq)
 
    for(i in seq_along(fastq)){
      if( !dir.exists(ids[i])) dir.create(ids[i])

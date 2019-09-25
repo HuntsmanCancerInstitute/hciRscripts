@@ -1,0 +1,152 @@
+## Template for README.Rmd file for metagenome sequencing.  Run add_readme.R to replace @VARIABLES
+
+---
+title: "HUMAnN2 analysis for @RUN"
+date: '`r gsub("  ", " ", format(Sys.time(), "%B %e, %Y"))`'
+output:
+  html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, comment="", collapse=TRUE)
+```
+
+This guide describes the steps used to run [HUMAnN2] on the Fastq files in
+GNomEx. HUMAnN2 implements a tiered search strategy to profile the functional
+content of a metagenome sample by 1) identifying known microbial species with [MetaPhlAn]
+2) constructing and mapping reads at a nucleotide level to a sample-specific ChocoPhlAn database
+and 3) searching unaligned reads using a translated search against the [UniRef90] protein database.
+Check the [HUMAnN2 paper] for more details.
+
+All the commands listed in steps #1 to #4 are organized in a `cmd.txt` file,
+which is used to send jobs to the [CHPC] clusters following the [Pysano]
+reference manual.  This file also includes [shell] scripts to parse sample names
+from FASTQ files and then read and write to different output files with that
+prefix.
+
+
+### 1. Remove optical duplicates
+
+Optical duplicates are a common [problem] on NovaSeq runs and can be removed
+before aligning using [clumpify].  Run the tool with the default settings using
+`BBmap` version v38.34 (see `optical_dups.txt` for total reads removed).
+The samples on the NovaSeq are often split into two different lanes and the code in
+`cmd.txt` will first join all reads into a single `@SAMPLE.R1.fq.gz` or `R2` file below.
+
+
+```{bash clump, eval=FALSE}
+clumpify.sh in1=@SAMPLE.R1.fq.gz \
+ in2=@SAMPLE.R2.fq.gz \
+ out1=@SAMPLE.clump1.fq.gz \
+ out2=@SAMPLE.clump2.fq.gz \
+ dupedist=12000 dedupe=t optical=t
+```
+
+### 2. Run FastQC
+
+Run [FastQC] version 0.11.5 to check the sequence quality.
+
+```{bash fastq, eval=FALSE}
+fastqc -T @NCPU -f fastq @SAMPLE.clump1.fq.gz
+```
+
+
+### 3. Trim and remove human reads
+
+Load the [bioBakery] package maintained by [CHPC] and run [kneaddata] to trim
+adpaters and remove human reads. The `bowtie2` and `trimmomatic` options below follow
+recommendations from the [Langille lab].  The output files are saved to the
+`kneaddata` directory.
+
+```{bash kneaddata, eval=FALSE}
+module load bioBakery/1.7
+runbioBakery kneaddata \
+ -t @NCPU \
+ --input @SAMPLE.clump1.fq.gz \
+ --input @SAMPLE.clump2.fq.gz \
+ -o kneaddata \
+ -db /tomato/dev/data/Human/GRCh38/bowtie2/GRCh38 \
+ --bowtie2 /tomato/dev/app/bowtie2/2.3.5.1 \
+ --bowtie2-options "--very-sensitive --dovetail" \
+ --trimmomatic /tomato/dev/app/Trimmomatic/0.39 \
+ --trimmomatic-options "SLIDINGWINDOW:4:20 MINLEN:50" \
+ --remove-intermediate-output
+```
+
+
+### 4. Run HUMAnN2
+
+
+Concatenate the paired fastq files into a single Fasta and run  [HUMAnN2] using
+a detection threshold of 0.001% relative abundance.  The output
+files are saved to the `humann2` directory and are described in detail in the  [user
+manual]. [CHPC] maintains the ChocoPhlAn v0.1.1 and UniRef90
+ databases (`uniref90_annotated.1.1.dmnd`) in the two directories below.
+
+
+```{bash humann2, eval=FALSE}
+cat kneaddata/*paired_1.fastq kneaddata/*paired_2.fastq > @SAMPLE.fq
+runbioBakery humann2 \
+ --threads @NCPU \
+ --input @SAMPLE.fq \
+ --output humann2 \
+ --prescreen-threshold 0.00001 \
+ --protein-database /uufs/chpc.utah.edu/sys/installdir/bioBakery/databases/uniref \
+ --nucleotide-database /uufs/chpc.utah.edu/sys/installdir/bioBakery/databases/chocophlan
+```
+
+
+### 5. Join output files
+
+Run [humann2_join_tables] to combine the [metaphlan bug], [gene family],
+[pathway abundance], and [pathway coverage] files into a single matrix. The
+function currently requires all the output in a single directory, so the first
+step creates symbolic links. Finally, calculate the [relative abundances]
+for both pathway abundance and gene families.
+
+```{bash join, eval=FALSE}
+for i in Alignments/*/humann2/*pathabundance.tsv; do f=`basename $i`; ln -s $i tmp/$f; done
+humann2_join_tables -i tmp -o @RUN_pathabundance.tsv
+humann2_renorm_table -i @RUN_pathabundance.tsv -o @RUN_pathabundance_relab.tsv --units relab
+```
+
+The combined output files are similar to datasets available in the [curatedMetagenomicData] package.
+
+
+### 6. Summarize statistics
+
+[MultiQC] searches the @ALIGNDIR directory for analysis logs and compiles an
+HTML report that includes interactive summary tables and plots for many steps in the pipeline.
+Since bowtie2 is run twice, one plot summarizes total human reads and another
+summaries hits to ChocoPhlAn species.
+
+```{r multiqc, eval=FALSE}
+multiqc @ALIGNDIR
+```
+
+
+
+<br>
+
+[MetaPhlAn]: http://huttenhower.sph.harvard.edu/metaphlan
+[HUMAnN2 paper]: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6235447/
+[problem]: https://sequencing.qcfail.com/articles/illumina-patterned-flow-cells-generate-duplicated-sequences/
+[clumpify]: https://jgi.doe.gov/data-and-tools/bbtools/bb-tools-user-guide/clumpify-guide/
+[UniRef90]: https://www.uniprot.org/help/uniref
+[user manual]: https://bitbucket.org/biobakery/humann2/wiki/Home#markdown-header-output-files
+[curatedMetagenomicData]: http://bioconductor.org/packages/release/data/experiment/html/curatedMetagenomicData.html
+[kneaddata]: http://huttenhower.sph.harvard.edu/kneaddata
+[bioBakery]: https://bitbucket.org/biobakery/biobakery/wiki/Home
+[Langille lab]: https://github.com/LangilleLab/microbiome_helper/wiki/Metagenomics-standard-operating-procedure-v2
+[metaphlan bug]: https://bitbucket.org/biobakery/humann2/wiki/Home#markdown-header-7-metaphlan2-bugs-list
+[gene family]: https://bitbucket.org/biobakery/humann2/wiki/Home#markdown-header-1-gene-families-file
+[pathway abundance]: https://bitbucket.org/biobakery/humann2/wiki/Home#markdown-header-2-pathway-abundance-file
+[pathway coverage]: https://bitbucket.org/biobakery/humann2/wiki/Home#markdown-header-3-pathway-coverage-file
+[humann2_join_tables]: https://bitbucket.org/biobakery/humann2/wiki/Home#markdown-header-humann2_join_tables
+[relative abundances]: https://bitbucket.org/biobakery/humann2/wiki/Home#markdown-header-humann2_renorm_table
+[HUMAnN2]: http://huttenhower.sph.harvard.edu/humann2
+[MultiQC]: http://multiqc.info/
+[FastQC]: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
+[Pysano]: https://uofuhealth.utah.edu/huntsman/shared-resources/gba/bioinformatics/infrastructure/pysano.php
+[CHPC]: https://www.chpc.utah.edu/
+[shell]: http://tldp.org/LDP/abs/html/index.html

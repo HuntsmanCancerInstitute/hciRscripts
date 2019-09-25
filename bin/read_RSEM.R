@@ -24,7 +24,7 @@ Combine RSEM output files into a single count matix")
      quit(status=1)
   }
 
-gene1 <- ifelse(  opt$results=="gene", TRUE, FALSE)
+gene1 <- ifelse(opt$results=="gene", TRUE, FALSE)
 counts <- read_RSEM(opt$directory, gene = gene1, value = opt$value)
 message("Saved ", ncol(counts) - 1, " samples to ", opt$output)
 readr::write_tsv(counts, opt$output )

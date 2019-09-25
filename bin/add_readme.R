@@ -14,9 +14,10 @@ opts <-  list(
     make_option(c("-f", "--fastq"), default=NULL,
           help="Sample fastq file name, will check /Repository/MicroarrayData with run ID if missing"),
     make_option(c("-d", "--database"), default="human",
-          help="Reference database, default human or mouse, fly, worm, pig, rat, rabbit, sheep, yeast, zebrafish"),
-    make_option(c("-v", "--version"), default="94",
-          help="Ensembl release, default 94"),
+          help="Reference database, default human or mouse, elephant, fly, worm, pig,
+     rat, rabbit, sheep, vervet, yeast, zebrafish"),
+    make_option(c("-v", "--version"), default="96",
+          help="Ensembl release, default 96"),
     make_option(c("-n", "--ncpu"), default="24",
           help="Number CPUs, pysano will use the maximum number, default 24"),
     make_option(c("-a", "--align"), default="Alignments",
@@ -27,7 +28,7 @@ opts <-  list(
 
 parser <- OptionParser(option_list=opts, description = "
 Creates a README.Rmd file for single, paired or miRNA sequencing workflows at HCI using defaults
-in the rmd.txt files from setup_jobs.R.  Run 'render.R -f README.Rmd' to create the html report.
+in the cmd.txt files from setup_jobs.R.  Run 'render.R -f README.Rmd' to create the html report.
 ")
 opt <- parse_args(parser)
 
@@ -41,7 +42,7 @@ install_dir <- "/home/BioApps/hciR"
 
 ## checks
 if(file.exists("README.Rmd")) stop("README.Rmd file already exists")
-if(!opt$sequencing %in% c("single", "paired", "miRNA")) stop("Sequencing should be single, paired or miRNA")
+if(!opt$sequencing %in% c("single", "paired", "miRNA", "metagenome", "metatranscriptome", "clumpify")) stop("No README template found")
 ## if sample ID is missing, convert run 14980R to 14980X1
 if(is.null(opt$id)) opt$id <- gsub("R.*", "X1", opt$run)
 ## if fastq is missing, search /Repository/MicroarrayData
@@ -50,7 +51,7 @@ if(is.null(opt$fastq)){
    if(length(opt$fastq) == 0) stop("No match to fastq files in /Repository/MicroarrayData, please add --fastq option")
    opt$fastq <- gsub(".*/", "", opt$fastq)  # remove path
    ## combine paried end into "fastq1.fq fastq2.fq"
-   if(length(opt$fastq) == 2 ) opt$fastq <- paste(opt$fastq, collapse= " ")
+   if(length(opt$fastq) == 2 ) opt$fastq <- paste(opt$fastq, collapse= " @NEWLINE ")
 }
 if(!opt$length %in% c("50", "125")) message("Length should be 50 or 125.  Please check if star", opt$length, " exists")
 sjdb <- as.numeric(opt$length) -1
@@ -63,7 +64,8 @@ name <- x$name[n]
 species <- x$species[n]
 assembly <- x$assembly[n]
 release <- as.numeric(opt$version)
-STAR_version <- "2.6.1b"
+STAR_version <- "2.7.0f"
+if(release == 94) STAR_version <- "2.6.1b"
 if(release == 92) STAR_version <- "2.5.4a"
 if(release == 90) STAR_version <- "2.5.2b"
 
@@ -71,8 +73,10 @@ if(release == 90) STAR_version <- "2.5.2b"
 ## fasta file name on FTP
 dna <- "toplevel"
 if(name %in% c("mouse", "human", "zebrafish")) dna <- "primary_assembly"
-## version 90 uses GRCz10
-if( release ==90 & assembly == "GRCz11" )   assembly <- "GRCz10"
+## old assemblies
+if(assembly == "GRCz11" & release == 90) assembly <- "GRCz10"
+if(assembly == "BDGP6.22" & release != 96) assembly <- "BDGP6"
+
 
 ## Load R markdown template and replace @Variables
 rmd_txt <- paste0(install_dir, "/templates/README_", opt$sequencing, ".Rmd")
@@ -83,6 +87,8 @@ rmd <- stringr::str_replace_all(rmd, c(
    `@LEVEL`    = dna,
    `@SAMPLE`   = opt$id,
    `@FASTQ`    = opt$fastq,
+   `@NEWLINE`  = "\\\\
+ ",
    `@RUN`      = opt$run,
    `@LENGTH`   = opt$length,
    `@SJDB`     = sjdb,
