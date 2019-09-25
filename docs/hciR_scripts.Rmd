@@ -8,16 +8,15 @@ output:
 This guide describes how to run alignments and quality metrics on the [CHPC]
 clusters and then run [multiQC] and other `R` scripts on the output files. The
 scripts are located in `/home/BioApps/hciR` on `uinta`, so add that directory
-to your path to run the `*.R` files below.  If you have Fastq files starting
-with `14176X`, the basic steps to align 50 bp single-end reads to mouse are
-listed below.
+to your path to run the `*.R` files below.  The basic steps to align 50 bp
+single-end reads to mouse are listed below.
 
 ```{bash fdt, eval=FALSE}
 setup_jobs.R -c kingspeak -s single -l 50 -d mouse -i <fastq directory> -e <hci email>
 pstart 14176X*
 module load multiqc
 multiqc .
-add_readme.R -d mouse -r 14176R -f 14176X1_170425_D00550_0428_ACB3GUANXX_4.txt.gz
+add_readme.R -d mouse -r 14176R -f 14176X1_170425.fastq.gz
 render.R -f README.Rmd
 read_featureCounts.R -d .
 run_deseq.R -c counts.txt -s samples.txt -d mouse
@@ -72,7 +71,7 @@ viewing BAM and BigWig files in [IGV].   Check the file and make any changes
 and then render the HTML report.
 
 ```{bash add_readme, eval=FALSE}
-add_readme.R -d mouse -r 14176R -f 14176X1_170425_D00550_0428_ACB3GUANXX_4.txt.gz
+add_readme.R -d mouse -r 14176R -f 14176X1_170425.fastq.gz
 # Created README.Rmd markdown file for mouse star50
 # Run 'render.R -f README.Rmd' to create an html report
 render.R -f README.Rmd
@@ -112,7 +111,7 @@ cat samples.txt
 # 14176X4  TG
 # ...
 add_deseq.R  -c counts.txt -s samples.txt -d mouse
-# Created DESeq.Rmd markdown file with mouse annotations from Ensembl version 94
+# Created DESeq.Rmd markdown file with mouse annotations from Ensembl version 96
 # Run 'render.R -f DESeq.Rmd' to create an html report
 ```
 
