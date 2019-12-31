@@ -1,7 +1,0 @@
-id	name	trt
-15069X1	1	Borrelia
-15069X2	2	Borrelia
-15069X3	4	Borrelia
-15069X4	5	mock
-15069X5	6	mock
-15069X6	9	mock

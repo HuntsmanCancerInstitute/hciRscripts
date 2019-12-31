@@ -19,7 +19,8 @@ multiqc .
 add_readme.R -d mouse -r 14176R -f 14176X1_170425.fastq.gz
 render.R -f README.Rmd
 read_featureCounts.R -d .
-run_deseq.R -c counts.txt -s samples.txt -d mouse
+add_deseq.R -c counts.txt -s samples.txt -d mouse
+render.R -f DESeq.Rmd
 ```
 
 
@@ -113,6 +114,7 @@ cat samples.txt
 add_deseq.R  -c counts.txt -s samples.txt -d mouse
 # Created DESeq.Rmd markdown file with mouse annotations from Ensembl version 96
 # Run 'render.R -f DESeq.Rmd' to create an html report
+render.R -f DESeq.Rmd
 ```
 
 

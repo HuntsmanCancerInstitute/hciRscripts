@@ -62,9 +62,9 @@ $SAMTOOLS index $OUT.bam
 $SAMTOOLS idxstats $OUT.bam | sort -V > $OUT.idxstats
 
 # count multimappers but ignore marked duplicates
-$FEATCOUNT -T $NCPU -s 1 -M --fraction --largestOverlap --ignoreDup -a $GTF -o $OUT.multi.counts $OUT.bam
-$FEATCOUNT -T $NCPU -s 1 --largestOverlap --ignoreDup -a $GTF -o $OUT.unique.counts $OUT.bam
-$FEATCOUNT -T $NCPU -s 1 --largestOverlap -a $GTF -o $OUT.unique.biotypes -g gene_biotype $OUT.bam
+$FEATCOUNT -T $NCPU -s 1 -M --fraction -O --largestOverlap --ignoreDup -a $GTF -o $OUT.multi.counts $OUT.bam
+$FEATCOUNT -T $NCPU -s 1 -O --largestOverlap --ignoreDup -a $GTF -o $OUT.unique.counts $OUT.bam
+$FEATCOUNT -T $NCPU -s 1 -O --largestOverlap -a $GTF -o $OUT.unique.biotypes -g gene_biotype $OUT.bam
 
 
 /usr/bin/java -Xmx16G -jar $PICARD CollectRnaSeqMetrics REF_FLAT=$REFFLAT \

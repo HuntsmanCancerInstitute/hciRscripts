@@ -23,6 +23,7 @@ BIGWIG=$APP/UCSC/bedGraphToBigWig
 PICARD=$APP/picard/2.9.0/picard.jar
 RSEM=$APP/rsem/1.3.1/rsem-calculate-expression
 CUTADAPT=$APP/modulesoftware/cutadapt
+FASTQSCREEN=$APP/fastq_screen/v0.14.0/fastq_screen
 
 # GET sample prefix from Fastq file name
 GZ=`echo *@FASTQ`
@@ -30,6 +31,11 @@ OUT=`echo ${GZ%%_*}`
 
 # CUTADAPT v 1.16
 $CUTADAPT -j $NCPU -O 6 -m 20 -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA -o $OUT.fq $GZ
+
+
+# %rRNA using fastq screen
+$FASTQSCREEN --conf /tomato/dev/data/FastQ_Screen_Genomes/eukrRNA/fastq_screen_rRNA.conf \
+ --subset 1000000 $OUT.fq
 
 # FASTQ
 $FASTQC -T $NCPU -f fastq $OUT.fq
@@ -41,6 +47,7 @@ $STAR --genomeDir $INDEX \
 --twopassMode Basic \
 --outSAMtype BAM SortedByCoordinate \
 --quantMode TranscriptomeSAM \
+--limitBAMsortRAM 20000000000 \
 --outWigType bedGraph \
 --outWigStrand Unstranded
 

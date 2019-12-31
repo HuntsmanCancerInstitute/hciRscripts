@@ -16,8 +16,8 @@ opts <-  list(
     make_option(c("-d", "--database"), default="human",
           help="Reference database, default human or mouse, elephant, fly, worm, pig,
      rat, rabbit, sheep, vervet, yeast, zebrafish"),
-    make_option(c("-v", "--version"), default="96",
-          help="Ensembl release, default 96"),
+    make_option(c("-v", "--version"), default="98",
+          help="Ensembl release, default 98"),
     make_option(c("-n", "--ncpu"), default="24",
           help="Number CPUs, pysano will use the maximum number, default 24"),
     make_option(c("-a", "--align"), default="Alignments",
@@ -42,7 +42,8 @@ install_dir <- "/home/BioApps/hciR"
 
 ## checks
 if(file.exists("README.Rmd")) stop("README.Rmd file already exists")
-if(!opt$sequencing %in% c("single", "paired", "miRNA", "metagenome", "metatranscriptome", "clumpify")) stop("No README template found")
+if(opt$sequencing == "novaseq") opt$sequencing <- "clumpify"
+if(!opt$sequencing %in% c("single", "paired", "miRNA", "metagenome", "metatranscriptome", "clumpify", "microbe")) stop("No README template found")
 ## if sample ID is missing, convert run 14980R to 14980X1
 if(is.null(opt$id)) opt$id <- gsub("R.*", "X1", opt$run)
 ## if fastq is missing, search /Repository/MicroarrayData
@@ -64,7 +65,8 @@ name <- x$name[n]
 species <- x$species[n]
 assembly <- x$assembly[n]
 release <- as.numeric(opt$version)
-STAR_version <- "2.7.0f"
+STAR_version <- "2.7.2c"
+if(release == 96) STAR_version <- "2.7.0f"
 if(release == 94) STAR_version <- "2.6.1b"
 if(release == 92) STAR_version <- "2.5.4a"
 if(release == 90) STAR_version <- "2.5.2b"
@@ -75,7 +77,7 @@ dna <- "toplevel"
 if(name %in% c("mouse", "human", "zebrafish")) dna <- "primary_assembly"
 ## old assemblies
 if(assembly == "GRCz11" & release == 90) assembly <- "GRCz10"
-if(assembly == "BDGP6.22" & release != 96) assembly <- "BDGP6"
+if(assembly == "BDGP6.22" & release < 96) assembly <- "BDGP6"
 
 
 ## Load R markdown template and replace @Variables

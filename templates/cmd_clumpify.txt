@@ -24,7 +24,7 @@ PICARD=$APP/picard/2.9.0/picard.jar
 RSEM=$APP/rsem/1.3.1/rsem-calculate-expression
 CUTADAPT=$APP/modulesoftware/cutadapt
 CLUMPIFY=$APP/BBmap/v38.34/clumpify.sh
-
+FASTQSCREEN=$APP/fastq_screen/v0.14.0/fastq_screen
 
 # Concatenate lanes
 R1=`echo *R1_001.fastq.gz`
@@ -47,6 +47,10 @@ $CUTADAPT -j $NCPU -O 6 -m 20 -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA \
  -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT \
  -o $OUT.1.fq -p $OUT.2.fq $OUT.clump1.fq.gz $OUT.clump2.fq.gz
 
+# %rRNA using fastq screen
+$FASTQSCREEN --conf /tomato/dev/data/FastQ_Screen_Genomes/eukrRNA/fastq_screen_rRNA.conf \
+ --subset 1000000 $OUT.1.fq
+
 rm $OUT.cat_R1.fq.gz $OUT.cat_R2.fq.gz
 rm $OUT.clump1.fq.gz $OUT.clump2.fq.gz
 
@@ -61,6 +65,7 @@ $STAR --genomeDir $INDEX \
 --twopassMode Basic \
 --outSAMtype BAM SortedByCoordinate \
 --quantMode TranscriptomeSAM \
+--limitBAMsortRAM 20000000000 \
 --outWigType bedGraph \
 --outWigStrand Unstranded
 

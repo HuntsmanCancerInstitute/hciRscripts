@@ -68,7 +68,7 @@ for(i in genome_rows){
       system("perl -lane '/transcript_id \"([^\"]+)\"/; print join \"\t\", (@F[0,1,2], $1, 1, @F[3])' tmp.out | sort -k1V -k2n -k3n > rRNA.bed")
       dict <- list.files("..", pattern = "dict$")
       if(length(dict) != 1) stop("Sequence dictionary file not found")
-      system(paste0("java -jar /tomato/dev/app/picard/1.137/picard.jar BedToIntervalList quiet=TRUE I=rRNA.bed SD=../", dict, " O=", org, ".rRNA.interval"))
+      system(paste0("java -jar /tomato/dev/app/picard/2.9.0/picard.jar BedToIntervalList quiet=TRUE I=rRNA.bed SD=../", dict, " O=", org, ".rRNA.interval"))
       file.remove("tmp.out")
       ## CMD.txt files
       message(" Creating cmd.txt file")

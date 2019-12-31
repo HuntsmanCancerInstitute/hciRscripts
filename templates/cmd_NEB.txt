@@ -56,9 +56,9 @@ $SAMTOOLS index $OUT.bam
 $SAMTOOLS idxstats $OUT.bam | sort -V > $OUT.idxstats
 
 # count multimappers
-$FEATCOUNT -T $NCPU -s 1 -M --fraction --largestOverlap -a $GTF -o $OUT.multi.counts $OUT.bam
-$FEATCOUNT -T $NCPU -s 1 --largestOverlap -a $GTF -o $OUT.unique.counts $OUT.bam
-$FEATCOUNT -T $NCPU -s 1 --largestOverlap -a $GTF -o $OUT.unique.biotypes -g gene_biotype $OUT.bam
+$FEATCOUNT -T $NCPU -s 1 -M --fraction -O --largestOverlap -a $GTF -o $OUT.multi.counts $OUT.bam
+$FEATCOUNT -T $NCPU -s 1 -O --largestOverlap -a $GTF -o $OUT.unique.counts $OUT.bam
+$FEATCOUNT -T $NCPU -s 1 -O --largestOverlap -a $GTF -o $OUT.unique.biotypes -g gene_biotype $OUT.bam
 
 /usr/bin/java -Xmx16G -jar $PICARD CollectRnaSeqMetrics REF_FLAT=$REFFLAT \
 STRAND=SECOND_READ_TRANSCRIPTION_STRAND RIBOSOMAL_INTERVALS=$RIBOINT \

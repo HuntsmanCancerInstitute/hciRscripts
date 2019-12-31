@@ -19,11 +19,11 @@ opts <-  list(
          help="Run ID in /Repository/MicroarryData, optional"),
    make_option(c("-a", "--analysis"), default="",
          help="Save files to /Repository/AnalysisData, optional"),
-   make_option(c("-v", "--version"), default="96",
-         help="Ensembl release, default 96, only 90, 92, 94 and 96 available"),
+   make_option(c("-v", "--version"), default="98",
+         help="Ensembl release, default 98, only 92, 94, 96 and 98 available"),
    make_option(c("-d", "--database"), default="human",
          help="Reference database, default human or mouse, elephant, fly, worm, pig,
-     rat, rabbit, sheep, yeast, zebrafish"),
+     rat, rabbit, sheep, vervet, yeast, zebrafish"),
     make_option(c("-l", "--length"), default="50",
        help="Read length for STAR reference, default 50 or 125")
 )
@@ -44,18 +44,19 @@ if(file.exists( "cmd.txt")){
    if( !grepl("@", opt$email )) opt$email <- paste0( opt$email, "@hci.utah.edu")
    ## STAR version should match version used to create index
    release <- as.numeric(opt$version)
-   if(!release %in% c(90, 92, 94, 96)) stop("Version should be 90, 92, 94 or 96")
-   STAR_version <- "2.7.0f"
+   if(!release %in% c(90, 92, 94, 96, 98)) message("Warning: Version may not have a reference")
+   STAR_version <- "2.7.2c"
+   if(release == 96) STAR_version <- "2.7.0f"
    if(release == 94) STAR_version <- "2.6.1b"
    if(release == 92) STAR_version <- "2.5.4a"
    if(release == 90) STAR_version <- "2.5.2b"
 
    if( opt$analysis != "" ) opt$analysis <- paste0("#a ", opt$analysis)
    if(!opt$length %in% c("50", "125")) message("Length should be 50 or 125.  Please check if star", opt$length, " exists")
-   if(!opt$sequencing %in% c("single", "paired", "qiagen", "clumpify", "novaseq", "NEB", "metagenome", "metatranscriptome")){
-       stop("Sequencing should be single, paired, novaseq, miRNA, NEB, metagenome or metatranscriptome")
+   if(!opt$sequencing %in% c("single", "paired", "qiagen", "clumpify", "novaseq", "NEB", "metagenome", "metatranscriptome", "microbe", "screen")){
+       stop("Sequencing should be single, paired, novaseq, qiagen, NEB, microbe, metagenome or metatranscriptome")
    }
-   if(opt$sequencing == "novaseq") opt$sequencing == "clumpify"
+   if(opt$sequencing == "novaseq") opt$sequencing <- "clumpify"
    x <- read.delim("/home/BioApps/hciR/STAR_ref_dbs.txt", stringsAsFactors=FALSE)
    refdb <- stringr::str_replace_all(opt$database, c(fly = "Drosophila", fruitfly = "Drosophila",
                   worm = "C_elegans", yeast = "S_cerevisiae", Homo ="Human", Mus = "Mouse"))
