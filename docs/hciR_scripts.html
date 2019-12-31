@@ -374,7 +374,8 @@ multiqc .
 add_readme.R -d mouse -r 14176R -f 14176X1_170425.fastq.gz
 render.R -f README.Rmd
 read_featureCounts.R -d .
-run_deseq.R -c counts.txt -s samples.txt -d mouse</code></pre>
+add_deseq.R -c counts.txt -s samples.txt -d mouse
+render.R -f DESeq.Rmd</code></pre>
 <div id="setup-jobs" class="section level3">
 <h3>1. Setup jobs</h3>
 <p>Run <code>setup_jobs.R</code> to create a <code>cmd.txt</code> file and link the Fastq files in the <code>Fastq</code> directory to create 12 separate sample directories (14176X1 to 14176X12).</p>
@@ -423,7 +424,8 @@ render.R -f README.Rmd
 # ...
 add_deseq.R  -c counts.txt -s samples.txt -d mouse
 # Created DESeq.Rmd markdown file with mouse annotations from Ensembl version 96
-# Run 'render.R -f DESeq.Rmd' to create an html report</code></pre>
+# Run 'render.R -f DESeq.Rmd' to create an html report
+render.R -f DESeq.Rmd</code></pre>
 </div>
 
 
