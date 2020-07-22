@@ -1,6 +1,6 @@
 name	dir	species	assembly
 elephant	Elephant	Loxodonta_africana	loxAfr3
-fly	Drosophila	Drosophila_melanogaster	BDGP6.22
+fly	Drosophila	Drosophila_melanogaster	BDGP6.28
 human	Human	Homo_sapiens	GRCh38
 mouse	Mouse	Mus_musculus	GRCm38
 sheep	Sheep	Ovis_aries	Oar_v3.1

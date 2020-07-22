@@ -17,11 +17,12 @@ APP=/tomato/dev/app
 FASTQC=$APP/FastQC/0.11.5/fastqc
 STAR=$APP/STAR/@STAR/STAR
 FEATCOUNT=$APP/Subread/1.6.3/bin/featureCounts
-SAMTOOLS=$APP/samtools/1.5/samtools
+SAMTOOLS=$APP/samtools/1.10/samtools
 BIGWIG=$APP/UCSC/bedGraphToBigWig
 PICARD=$APP/picard/2.9.0/picard.jar
 UMI_EXTRACTOR=$APP/modulesoftware/qiagen_smallRNA_umi_extractor
 UMI_DEDUP=$APP/modulesoftware/bam_umi_dedup
+FASTQSCREEN=$APP/fastq_screen/v0.14.0/fastq_screen
 
 ## GET sample prefix from Fastq file name
 GZ=`echo *@FASTQ`
@@ -32,6 +33,10 @@ $UMI_EXTRACTOR --input $GZ \
 --fail ${OUT}_perfect_match_fail.fastq.gz
 
 $FASTQC -T $NCPU -f fastq ${OUT}_perfect_match_with_umi.fastq.gz
+
+# %rRNA using fastq screen
+$FASTQSCREEN --conf /tomato/dev/data/FastQ_Screen_Genomes/eukrRNA/fastq_screen_rRNA.conf \
+ --subset 1000000 ${OUT}_perfect_match_with_umi.fastq.gz
 
 $STAR --genomeDir $INDEX \
 --readFilesIn ${OUT}_perfect_match_with_umi.fastq.gz \
@@ -68,7 +73,7 @@ $FEATCOUNT -T $NCPU -s 1 -O --largestOverlap -a $GTF -o $OUT.unique.biotypes -g 
 
 
 /usr/bin/java -Xmx16G -jar $PICARD CollectRnaSeqMetrics REF_FLAT=$REFFLAT \
-STRAND=SECOND_READ_TRANSCRIPTION_STRAND RIBOSOMAL_INTERVALS=$RIBOINT \
+STRAND=FIRST_READ_TRANSCRIPTION_STRAND RIBOSOMAL_INTERVALS=$RIBOINT \
 I=$OUT.bam O=$OUT.rna_metrics
 
 # bedGraphToBigWig v 4

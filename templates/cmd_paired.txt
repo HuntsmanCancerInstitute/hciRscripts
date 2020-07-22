@@ -18,7 +18,7 @@ APP=/tomato/dev/app
 FASTQC=$APP/FastQC/0.11.5/fastqc
 STAR=$APP/STAR/@STAR/STAR
 FEATCOUNT=$APP/Subread/1.6.3/bin/featureCounts
-SAMTOOLS=$APP/samtools/1.5/samtools
+SAMTOOLS=$APP/samtools/1.10/samtools
 BIGWIG=$APP/UCSC/bedGraphToBigWig
 PICARD=$APP/picard/2.9.0/picard.jar
 RSEM=$APP/rsem/1.3.1/rsem-calculate-expression
@@ -29,7 +29,7 @@ FASTQSCREEN=$APP/fastq_screen/v0.14.0/fastq_screen
 GZ=`echo *@FASTQ`
 OUT=`echo ${GZ%%_*}`
 
-# CUTADAPT v 1.16
+# CUTADAPT  v 2.8
 $CUTADAPT -j $NCPU -O 6 -m 20 -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA \
  -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT \
  -o $OUT.1.fq -p $OUT.2.fq $GZ
@@ -50,26 +50,27 @@ $STAR --genomeDir $INDEX \
 --runThreadN $NCPU \
 --twopassMode Basic \
 --outSAMtype BAM SortedByCoordinate \
+--limitBAMsortRAM 64000000000 \
+--outBAMsortingBinsN 100 \
 --quantMode TranscriptomeSAM \
---limitBAMsortRAM 20000000000 \
 --outWigType bedGraph \
 --outWigStrand Unstranded
-
-# RSEM
-$RSEM --paired-end -p $NCPU --alignments --strandedness reverse --no-bam-output \
-   Aligned.toTranscriptome.out.bam $RSEM_INDEX $OUT
 
 # rename for multiqc ID parsing
 mv Aligned.sortedByCoord.out.bam $OUT.bam
 mv Log.final.out $OUT.Log.final.out
 
-# featureCounts -s 2
-$FEATCOUNT -T $NCPU -p -s 2 --largestOverlap -a $GTF -o $OUT.counts $OUT.bam
-$FEATCOUNT -T $NCPU -p -s 2 --largestOverlap -a $GTF -o $OUT.biotypes -g gene_biotype $OUT.bam
-
 # Samtools
 $SAMTOOLS index $OUT.bam
 $SAMTOOLS idxstats $OUT.bam | sort -V > $OUT.idxstats
+
+# RSEM
+$RSEM --paired-end -p $NCPU --alignments --strandedness reverse --no-bam-output \
+   Aligned.toTranscriptome.out.bam $RSEM_INDEX $OUT
+
+# featureCounts -s 2
+$FEATCOUNT -T $NCPU -p -s 2 --largestOverlap -a $GTF -o $OUT.counts $OUT.bam
+$FEATCOUNT -T $NCPU -p -s 2 --largestOverlap -a $GTF -o $OUT.biotypes -g gene_biotype $OUT.bam
 
 # RnaSeq metrics
 /usr/bin/java -Xmx20G -jar $PICARD CollectRnaSeqMetrics  REF_FLAT=$REFFLAT \
@@ -79,6 +80,7 @@ I=$OUT.bam  O=$OUT.rna_metrics
 # bedGraphToBigWig
 $BIGWIG Signal.Unique.str1.out.bg  $CHROM $OUT.unique.bw
 $BIGWIG Signal.UniqueMultiple.str1.out.bg $CHROM $OUT.multiple.bw
+
 
 rm Aligned.toTranscriptome.out.bam
 rm $OUT.1.fq

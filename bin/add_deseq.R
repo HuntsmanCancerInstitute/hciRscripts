@@ -5,12 +5,12 @@ suppressPackageStartupMessages(library("readr"))
 
 opts <-  list(
    make_option(c("-r", "--run"), default=NULL,
-        help="Run ID for report title"),
+        help="ID for report title, DESeq analysis for <run>.  This is REQUIRED."),
    make_option(c("-d", "--database"), default="human",
         help="Annotation database, default human or mouse, elephant, fly, pig,
      rat, rabbit, sheep,  worm, vervet, yeast or zebrafish"),
-   make_option(c("-v", "--version"), default="98",
-        help="Ensembl release, default 98. Earlier releases are only supported for mouse and human"),
+   make_option(c("-v", "--version"), default="100",
+        help="Ensembl release, default 100. Earlier releases are only supported for mouse and human"),
    make_option(c("-s", "--samples"), default="samples.txt",
         help="Tab-delimited file with ids in column 1 matching count column names
      and a treatment column for contrasts, default samples.txt"),
@@ -37,6 +37,7 @@ Create a DESeq markdown file with commands to run DESeq2
 opt <- parse_args(parser)
 
 if(is.null(opt$run)){
+   cat("\nWARNING: missing required option -r\n\n")
    print_help(parser)
    quit(status=1)
 }

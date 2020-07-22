@@ -16,8 +16,8 @@ opts <-  list(
     make_option(c("-d", "--database"), default="human",
           help="Reference database, default human or mouse, elephant, fly, worm, pig,
      rat, rabbit, sheep, vervet, yeast, zebrafish"),
-    make_option(c("-v", "--version"), default="98",
-          help="Ensembl release, default 98"),
+    make_option(c("-v", "--version"), default="100",
+          help="Ensembl release, default 100"),
     make_option(c("-n", "--ncpu"), default="24",
           help="Number CPUs, pysano will use the maximum number, default 24"),
     make_option(c("-a", "--align"), default="Alignments",
@@ -65,12 +65,12 @@ name <- x$name[n]
 species <- x$species[n]
 assembly <- x$assembly[n]
 release <- as.numeric(opt$version)
-STAR_version <- "2.7.2c"
+ STAR_version <- "2.7.3a"
+if(release == 98) STAR_version <- "2.7.2c"
 if(release == 96) STAR_version <- "2.7.0f"
 if(release == 94) STAR_version <- "2.6.1b"
 if(release == 92) STAR_version <- "2.5.4a"
 if(release == 90) STAR_version <- "2.5.2b"
-
 
 ## fasta file name on FTP
 dna <- "toplevel"

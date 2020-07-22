@@ -54,11 +54,11 @@ if(dir %in% c("Human", "Mouse", "Zebrafish")) dna<- "dna.primary_assembly"
 message("Creating chrom.sizes file")
 dnafile <- gsub(".gz$", "", dnafile)
 
-system(paste("/tomato/dev/app/samtools/1.5/samtools faidx", dnafile))  
+system(paste("/tomato/dev/app/samtools/1.10/samtools faidx", dnafile))
 system(paste0("cut -f1,2 ", dnafile, ".fai |  sort -V  > chrom.sizes"))
 
 ##4. Create Sequence Dictionary file
 
 message("Creating sequence dictionary file")
-system(paste0("java -jar /tomato/dev/app/picard/1.137/picard.jar CreateSequenceDictionary R=", dnafile,
+system(paste0("java -jar /tomato/dev/app/picard/2.9.0/picard.jar CreateSequenceDictionary R=", dnafile,
    " O=", gsub("fa$", "dict", dnafile), " GENOME_ASSEMBLY=", assembly, " SPECIES=", species))

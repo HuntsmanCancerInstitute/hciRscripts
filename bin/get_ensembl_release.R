@@ -57,7 +57,7 @@ for(i in genome_rows){
       gtf <- gsub(".gz$", "", gtffile)
       org <- gsub(".gtf$", "", gtf)
       message(" Creating RefFlat file")
-      system(paste0("/home/u6008939/miniconda3/bin/gtfToGenePred -genePredExt ", gtf, " tmp.out" ))
+      system(paste0("/home/BioApps/UCSCExe/gtfToGenePred -genePredExt ", gtf, " tmp.out" ))
       ## paste column 12 and 1-10,
       system("cut -f1-10 tmp.out > tmp10.out")
       system("cut -f12 tmp.out > tmp12.out")

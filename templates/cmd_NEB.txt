@@ -17,17 +17,22 @@ APP=/tomato/dev/app
 FASTQC=$APP/FastQC/0.11.5/fastqc
 STAR=$APP/STAR/@STAR/STAR
 FEATCOUNT=$APP/Subread/1.6.3/bin/featureCounts
-SAMTOOLS=$APP/samtools/1.5/samtools
+SAMTOOLS=$APP/samtools/1.10/samtools
 BIGWIG=$APP/UCSC/bedGraphToBigWig
 PICARD=$APP/picard/2.9.0/picard.jar
 CUTADAPT=$APP/modulesoftware/cutadapt
+FASTQSCREEN=$APP/fastq_screen/v0.14.0/fastq_screen
 
 ## GET sample prefix from Fastq file name
 GZ=`echo *@FASTQ`
 OUT=`echo ${GZ%%_*}`
 
-# CUTADAPT v 1.16
+# CUTADAPT  v 2.8
 $CUTADAPT -j $NCPU -O 6 -m 16 -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA -o $OUT.fq $GZ
+
+# %rRNA using fastq screen
+$FASTQSCREEN --conf /tomato/dev/data/FastQ_Screen_Genomes/eukrRNA/fastq_screen_rRNA.conf \
+ --subset 1000000 $OUT.fq
 
 # FASTQ
 $FASTQC -T $NCPU -f fastq $OUT.fq
@@ -61,7 +66,7 @@ $FEATCOUNT -T $NCPU -s 1 -O --largestOverlap -a $GTF -o $OUT.unique.counts $OUT.
 $FEATCOUNT -T $NCPU -s 1 -O --largestOverlap -a $GTF -o $OUT.unique.biotypes -g gene_biotype $OUT.bam
 
 /usr/bin/java -Xmx16G -jar $PICARD CollectRnaSeqMetrics REF_FLAT=$REFFLAT \
-STRAND=SECOND_READ_TRANSCRIPTION_STRAND RIBOSOMAL_INTERVALS=$RIBOINT \
+STRAND=FIRST_READ_TRANSCRIPTION_STRAND RIBOSOMAL_INTERVALS=$RIBOINT \
 I=$OUT.bam O=$OUT.rna_metrics
 
 # bedGraphToBigWig v 4

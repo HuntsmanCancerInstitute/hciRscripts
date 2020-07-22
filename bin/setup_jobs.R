@@ -19,8 +19,8 @@ opts <-  list(
          help="Run ID in /Repository/MicroarryData, optional"),
    make_option(c("-a", "--analysis"), default="",
          help="Save files to /Repository/AnalysisData, optional"),
-   make_option(c("-v", "--version"), default="98",
-         help="Ensembl release, default 98, only 92, 94, 96 and 98 available"),
+   make_option(c("-v", "--version"), default="100",
+         help="Ensembl release, default 100, version 92, 94, 96 and 98 are also available for human and mouse"),
    make_option(c("-d", "--database"), default="human",
          help="Reference database, default human or mouse, elephant, fly, worm, pig,
      rat, rabbit, sheep, vervet, yeast, zebrafish"),
@@ -31,7 +31,8 @@ opts <-  list(
 parser <- OptionParser(option_list=opts, description = "
 Creates a cmd.txt file and sample directories with Fastq file links in order to run STAR,
 featureCounts and quality metrics on the CHPC clusters using pysano.  The default is to align
-to single-end 50 bp reads the human reference.")
+single-end 50 bp reads to the latest human reference. Check /tomato/dev/data to see if older
+references are available")
   opt <- parse_args(parser)
   if( opt$email == "NA" ){
      print_help(parser)
@@ -44,8 +45,9 @@ if(file.exists( "cmd.txt")){
    if( !grepl("@", opt$email )) opt$email <- paste0( opt$email, "@hci.utah.edu")
    ## STAR version should match version used to create index
    release <- as.numeric(opt$version)
-   if(!release %in% c(90, 92, 94, 96, 98)) message("Warning: Version may not have a reference")
-   STAR_version <- "2.7.2c"
+   if(!release %in% c(98, 100)) message("Note: Version may not have a reference, please check /tomato/dev/data")
+   STAR_version <- "2.7.3a"
+   if(release == 98) STAR_version <- "2.7.2c"
    if(release == 96) STAR_version <- "2.7.0f"
    if(release == 94) STAR_version <- "2.6.1b"
    if(release == 92) STAR_version <- "2.5.4a"
@@ -62,13 +64,13 @@ if(file.exists( "cmd.txt")){
                   worm = "C_elegans", yeast = "S_cerevisiae", Homo ="Human", Mus = "Mouse"))
 
    n <- grep(refdb, x$dir, ignore=TRUE)
-   if(length(n)!=1) stop("Database should match human, mouse, elephant, fly, worm, pig, rat, rabbit, sheep, yeast or zebrafish.")
+   if(length(n)!=1) stop("Database should match human, mouse, elephant, fly, worm, pig, rat, rabbit, sheep, vervet, yeast or zebrafish.")
    species <- x$species[n]
    assembly <- x$assembly[n]
    tomato_dir <- x$dir[n]
    ## old assemblies
    if(assembly == "GRCz11" & release == 90) assembly <- "GRCz10"
-   if(assembly == "BDGP6.22" & release != 96) assembly <- "BDGP6"
+   if(assembly == "BDGP6.28" & release == 98) assembly <- "BDGP6.22"
 
 
    cmd_txt <- paste0("/home/BioApps/hciR/templates/cmd_", opt$sequencing, ".txt")

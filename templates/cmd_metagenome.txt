@@ -7,7 +7,7 @@
 # Paths
 APP=/tomato/dev/app
 FASTQC=$APP/FastQC/0.11.5/fastqc
-SAMTOOLS=$APP/samtools/1.5/samtools
+SAMTOOLS=$APP/samtools/1.10/samtools
 CLUMPIFY=$APP/BBmap/v38.34/clumpify.sh
 BOWTIE2=$APP/bowtie2/2.3.5.1
 TRIMMOMATIC=$APP/Trimmomatic/0.39
