@@ -1,4 +1,4 @@
-## Template for cmd.txt file for Qiagen miRNA.  Run setup_jobs.R to replace @VARIABLES
+## Template for cmd.txt file for paired Qiagen miRNA.  Run setup_jobs.R to replace @VARIABLES
 
 #e @EMAIL -b
 #c @CLUSTER
@@ -20,7 +20,7 @@ FEATCOUNT=$APP/Subread/1.6.3/bin/featureCounts
 SAMTOOLS=$APP/samtools/1.10/samtools
 BIGWIG=$APP/UCSC/bedGraphToBigWig
 PICARD=$APP/picard/2.9.0/picard.jar
-UMI_EXTRACTOR=$APP/modulesoftware/qiagen_smallRNA_umi_extractor
+UMI_EXTRACTOR=$APP/modulesoftware/smallRNA_pe_umi_extractor
 UMI_DEDUP=$APP/modulesoftware/bam_umi_dedup
 FASTQSCREEN=$APP/fastq_screen/v0.14.0/fastq_screen
 
@@ -28,18 +28,22 @@ FASTQSCREEN=$APP/fastq_screen/v0.14.0/fastq_screen
 GZ=`echo *@FASTQ`
 OUT=`echo ${GZ%%_*}`
 
-$UMI_EXTRACTOR --input $GZ \
---out ${OUT}_perfect_match_with_umi.fastq.gz \
---fail ${OUT}_perfect_match_fail.fastq.gz
+R1=`echo *R1_001.fastq.gz`
+R2=`echo *R2_001.fastq.gz`
+OUT=`echo ${R1%%_*}`
 
-$FASTQC -T $NCPU -f fastq ${OUT}_perfect_match_with_umi.fastq.gz
+
+$UMI_EXTRACTOR --f1 $R1 --f2 $R2 \
+--out ${OUT}_umi.fastq.gz
+
+$FASTQC -T $NCPU -f fastq ${OUT}_umi.fastq.gz
 
 # %rRNA using fastq screen
 $FASTQSCREEN --conf /tomato/dev/data/FastQ_Screen_Genomes/eukrRNA/fastq_screen_rRNA.conf \
- --subset 1000000 ${OUT}_perfect_match_with_umi.fastq.gz
+ --subset 1000000 ${OUT}_umi.fastq.gz
 
 $STAR --genomeDir $INDEX \
---readFilesIn ${OUT}_perfect_match_with_umi.fastq.gz \
+--readFilesIn ${OUT}_umi.fastq.gz \
 --readFilesCommand zcat \
 --runThreadN $NCPU \
 --outSAMtype BAM SortedByCoordinate \

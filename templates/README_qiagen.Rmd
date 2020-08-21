@@ -14,7 +14,7 @@ knitr::opts_chunk$set(warning=FALSE, comment="", collapse=TRUE)
 This guide describes the steps used to run [STAR] and other bioinformatic tools
 on the Fastq files in GNomEx.  The Qiagen small RNA library includes UMI tags to
 find PCR duplicates and these are extracted and marked using Perl scripts
-developed by Tim Parnell (`qiagen_smallRNA_umi_extractor` and `bam_umi_dedup`).
+developed by Tim Parnell (`smallRNA_pe_umi_extractor.pl` and `bam_umi_dedup`).
 
 All the commands listed in steps #2 to #7 are organized in a `cmd.txt` file,  which
 is used to send jobs to the [CHPC] clusters following the [Pysano] reference
@@ -44,38 +44,23 @@ STAR --runMode genomeGenerate \
 
 ### 2. Extract UMI tags
 
-Extract the UMI tags and save to `@SAMPLE_perfect_match_with_umi.fastq.gz`.
+The smallRNA_pe_umi_extractor script searches for the Qiagen adapter and UMI in read 2 and moves the 12 base
+UMI tag into the FASTQ header of read 1 (and also remove any adapter sequence from read 1).
 
 ```{bash umi_extract, eval=FALSE}
-qiagen_smallRNA_umi_extractor --input @FASTQ \
-     --out @SAMPLE_perfect_match_with_umi.fastq.gz \
-     --fail @SAMPLE_perfect_match_fail.fastq.gz
-```
-
-This script searches for Qiagen adapters with perfect matches and moves
-the 12 base UMI tag into the FASTQ header and removes the remaining adapter sequences.
-For example, a 65 bp sequence in the original FASTQ files is trimmed and saved to the perfect match FASTQ
-with the UMI tag in the header below.
-
-```{bash trim, eval=FALSE}
-# Original fastq.gz
-@HISEQ294:393:CCFHBANXX:1:1101:1241:2172 1:N:0:ACAGTG
-ACCAAAACATTCTCCTCCGCAAACTGTAGGCACCATCAATCCCCACCGTATCAGATCGGAAGAGC
-#<Sequence to align ><  Qiagen adapter >< UMI tag  ><Illumina adapter>
-
-# Perfect match fastq.gz
-@HISEQ294:393:CCFHBANXX:1:1101:1241:2172:UMI:CCCCACCGTATC 1:N:0:ACAGTG
-ACCAAAACATTCTCCTCCGCA
+# add --f2 before R2
+smallRNA_pe_umi_extractor --f1 @FASTQ \
+     --out @SAMPLE_umi.fastq.gz
 ```
 
 
 ### 3. Run FastQC
 
-Run [FastQC] on the perfect match FASTQ file.  This tool ouputs sequence length distributions,
+Run [FastQC] on the updated FASTQ file.  This tool ouputs sequence length distributions,
 overrepresented sequences and many other statistics.
 
 ```{bash fastq, eval=FALSE}
-fastqc -f fastq @SAMPLE_perfect_match_with_umi.fastq.gz
+fastqc -f fastq @SAMPLE_umi.fastq.gz
 ```
 
 ### 4. Align reads
@@ -85,7 +70,7 @@ Align the short reads using [STAR] version @STAR to the @NAME reference and outp
 
 ```{bash star_run, eval=FALSE}
 STAR --genomeDir star@LENGTH \
-     --readFilesIn @SAMPLE_perfect_match_with_umi.fastq.gz \
+     --readFilesIn @SAMPLE_umi.fastq.gz \
      --readFilesCommand zcat \
      --runThreadN @NCPU  \
      --outSAMtype BAM SortedByCoordinate \
@@ -119,10 +104,10 @@ the GTF file (and ignore marked duplicates).   The first command counts unique
 reads and the second counts unique and multi-mapping reads by fractions.
 
 ```{bash counts, eval=FALSE}
-featureCounts -T @NCPU -s 1 --largestOverlap --ignoreDup -a @SPECIES.@ASSEMBLY.@VERSION.gtf \
+featureCounts -T @NCPU -s 1 -O --largestOverlap --ignoreDup -a @SPECIES.@ASSEMBLY.@VERSION.gtf \
       -o @SAMPLE.unique.counts @SAMPLE.bam
-featureCounts -T @NCPU -s 1 --largestOverlap --ignoreDup -a @SPECIES.@ASSEMBLY.@VERSION.gtf \
-      -M --fraction -o @SAMPLE.multi.counts @SAMPLE.bam
+featureCounts -T @NCPU -s 1 -M --fraction -O --largestOverlap --ignoreDup -a @SPECIES.@ASSEMBLY.@VERSION.gtf \
+      -o @SAMPLE.multi.counts @SAMPLE.bam
 ```
 
 ### 7. Check quality

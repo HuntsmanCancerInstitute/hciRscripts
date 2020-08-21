@@ -1,4 +1,4 @@
-## Template for cmd.txt file for Nova-Seq paried end in 2 lanes with clumplify.  Run setup_jobs.R to replace @VARIABLES
+## Template for cmd.txt file for Nova-Seq paired end in 2 lanes with clumplify.
 
 #e @EMAIL -b
 #c @CLUSTER
@@ -43,8 +43,8 @@ $CLUMPIFY in1=$OUT.cat_R1.fq.gz in2=$OUT.cat_R2.fq.gz out1=$OUT.clump1.fq.gz \
  out2=$OUT.clump2.fq.gz dupedist=12000 dedupe=t optical=t
 
 # CUTADAPT  v 2.8
-$CUTADAPT -j $NCPU -O 6 -m 20 -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA \
- -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT \
+$CUTADAPT -j $NCPU -O 6 -m 20 -a @ADAPT1 \
+ -A @ADAPT2 \
  -o $OUT.1.fq -p $OUT.2.fq $OUT.clump1.fq.gz $OUT.clump2.fq.gz
 
 # %rRNA using fastq screen

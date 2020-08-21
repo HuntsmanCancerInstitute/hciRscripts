@@ -30,7 +30,7 @@ GZ=`echo *@FASTQ`
 OUT=`echo ${GZ%%_*}`
 
 # CUTADAPT v 2.8
-$CUTADAPT -j $NCPU -O 6 -m 20 -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA -o $OUT.fq $GZ
+$CUTADAPT -j $NCPU -O 6 -m 20 -a @ADAPT1 -o $OUT.fq $GZ
 
 # %rRNA using fastq screen
 $FASTQSCREEN --conf /tomato/dev/data/FastQ_Screen_Genomes/eukrRNA/fastq_screen_rRNA.conf \

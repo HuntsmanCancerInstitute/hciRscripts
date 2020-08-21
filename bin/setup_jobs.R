@@ -15,6 +15,8 @@ opts <-  list(
          help="Match fastq files ending in default .gz"),
    make_option(c("-m", "--modified"), default="NA",
          help="Only link fastq files with modified time >= YYYY-MM-DD"),
+   make_option(c("-p", "--adapters"), default="Illumina",
+         help="Adapter sequences, default Illumina or Nextera"),
    make_option(c("-r", "--run"), default="NA",
          help="Run ID in /Repository/MicroarryData, optional"),
    make_option(c("-a", "--analysis"), default="",
@@ -55,7 +57,8 @@ if(file.exists( "cmd.txt")){
 
    if( opt$analysis != "" ) opt$analysis <- paste0("#a ", opt$analysis)
    if(!opt$length %in% c("50", "125")) message("Length should be 50 or 125.  Please check if star", opt$length, " exists")
-   if(!opt$sequencing %in% c("single", "paired", "qiagen", "clumpify", "novaseq", "NEB", "metagenome", "metatranscriptome", "microbe", "screen")){
+   if(!opt$sequencing %in% c("single", "paired", "qiagen", "clumpify", "novaseq",
+              "NEB", "metagenome", "metatranscriptome", "microbe", "screen")){
        stop("Sequencing should be single, paired, novaseq, qiagen, NEB, microbe, metagenome or metatranscriptome")
    }
    if(opt$sequencing == "novaseq") opt$sequencing <- "clumpify"
@@ -71,13 +74,21 @@ if(file.exists( "cmd.txt")){
    ## old assemblies
    if(assembly == "GRCz11" & release == 90) assembly <- "GRCz10"
    if(assembly == "BDGP6.28" & release == 98) assembly <- "BDGP6.22"
-
+   if(tolower(opt$adapters) == "nextera"){
+	   adapt1 <- "CTGTCTCTTATACACATCT"
+	   adapt2 <- "CTGTCTCTTATACACATCT"
+   }else{
+	   # Illumina adapters
+	   adapt1 <- "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA"
+	   adapt2 <- "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
+   }
 
    cmd_txt <- paste0("/home/BioApps/hciR/templates/cmd_", opt$sequencing, ".txt")
    cmd <- readr::read_lines(cmd_txt, skip=2)
    cmd <- stringr::str_replace_all(cmd, c(`@EMAIL` = opt$email, `@CLUSTER` = opt$cluster,
-    `@ANALYSIS` = opt$analysis, `@LENGTH` =  opt$length, `@DIR` = tomato_dir, `@SPECIES`= species ,
-    `@ASSEMBLY`= assembly ,`@VERSION` = release, `@STAR` = STAR_version, `@FASTQ` = opt$fastq  ))
+    `@ANALYSIS` = opt$analysis, `@LENGTH` =  opt$length, `@DIR` = tomato_dir, `@SPECIES`= species,
+    `@ASSEMBLY`= assembly ,`@VERSION` = release, `@STAR` = STAR_version, `@FASTQ` = opt$fastq,
+     `@ADAPT1`= adapt1, `@ADAPT2`= adapt2 ))
    readr::write_lines(cmd, "cmd.txt")
     message("Created cmd.txt file for ", refdb, " star", opt$length)
 }

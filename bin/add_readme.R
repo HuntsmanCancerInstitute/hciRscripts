@@ -43,7 +43,7 @@ install_dir <- "/home/BioApps/hciR"
 ## checks
 if(file.exists("README.Rmd")) stop("README.Rmd file already exists")
 if(opt$sequencing == "novaseq") opt$sequencing <- "clumpify"
-if(!opt$sequencing %in% c("single", "paired", "miRNA", "metagenome", "metatranscriptome", "clumpify", "microbe")) stop("No README template found")
+if(!opt$sequencing %in% c("single", "paired", "miRNA", "qiagen", "metagenome", "metatranscriptome", "clumpify", "microbe")) stop("No README template found")
 ## if sample ID is missing, convert run 14980R to 14980X1
 if(is.null(opt$id)) opt$id <- gsub("R.*", "X1", opt$run)
 ## if fastq is missing, search /Repository/MicroarrayData
