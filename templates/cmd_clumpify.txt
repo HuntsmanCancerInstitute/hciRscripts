@@ -48,7 +48,7 @@ $CUTADAPT -j $NCPU -O 6 -m 20 -a @ADAPT1 \
  -o $OUT.1.fq -p $OUT.2.fq $OUT.clump1.fq.gz $OUT.clump2.fq.gz
 
 # %rRNA using fastq screen
-$FASTQSCREEN --conf /tomato/dev/data/FastQ_Screen_Genomes/eukrRNA/fastq_screen_rRNA.conf \
+$FASTQSCREEN --conf @SCREEN_CONF \
  --subset 1000000 $OUT.1.fq
 
 rm $OUT.cat_R1.fq.gz $OUT.cat_R2.fq.gz

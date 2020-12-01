@@ -1,0 +1,67 @@
+## Template for cmd.txt file for microbe assembly following Snitkin lab at https://comparative-genomics.readthedocs.io/en/latest/index.html.
+
+#e @EMAIL -b
+#c @CLUSTER
+@ANALYSIS
+
+ORG=/tomato/dev/data/Bacteria/Clostridium
+DB=$ORG/Clostridioides_difficile_630.ASM920v1.dna.toplevel.fa
+SnpEffDB=Peptoclostridium_difficile_630
+
+# Paths
+APP=/tomato/dev/app
+FASTQC=$APP/FastQC/0.11.5/fastqc
+BWA=$APP/bwa/0.7.17/bwa
+# bwa requires samtools in path
+export PATH=$PATH:$APP/samtools/1.10
+SAMTOOLS=$APP/samtools/1.10/samtools
+BCFTOOLS=$APP/bcftools/1.9/bcftools
+PICARD=$APP/picard/2.9.0/picard.jar
+GATK=$APP/gatk/3.8/GenomeAnalysisTK.jar
+SNPEFF=$APP/snpEff/v4_3t/snpEff.jar
+CUTADAPT=$APP/modulesoftware/cutadapt
+
+# GET sample prefix from Fastq file names (should be 2 files)
+GZ=`echo *@FASTQ`
+OUT=`echo ${GZ%%_*}`
+
+# trim using CUTADAPT  v 2.8
+$CUTADAPT -j $NCPU -O 6 -m 20  -A CTGTCTCTTATACACA -a CTGTCTCTTATACACA \
+-G GATGTGTATAAGAGACAG -g GATGTGTATAAGAGACAG \
+ -o $OUT.1.fq -p $OUT.2.fq $GZ
+
+# FASTQ
+$FASTQC -T $NCPU -f fastq $OUT.1.fq
+$FASTQC -T $NCPU -f fastq $OUT.2.fq
+
+# Align
+$BWA mem -M -t $NCPU $DB $OUT.1.fq $OUT.2.fq > $OUT.aln.sam
+
+# no stats from BWA so use samtools
+$SAMTOOLS flagstat $OUT.aln.sam  > $OUT.samstats.txt
+
+# SAVE unaligned?
+$SAMTOOLS fasta -f 4 $OUT.aln.sam > $OUT.unaligned.fa
+
+# Convert to sorted bam for mark duplicates
+$SAMTOOLS view -bS $OUT.aln.sam | samtools sort -  > $OUT.unmarked.bam
+
+# Mark duplicates
+/usr/bin/java -Xmx20G -jar $PICARD MarkDuplicates REMOVE_DUPLICATES=true \
+INPUT=$OUT.unmarked.bam OUTPUT=$OUT.bam METRICS_FILE=$OUT.markduplicates_metrics.txt \
+CREATE_INDEX=true VALIDATION_STRINGENCY=LENIENT
+
+# CALL variants
+# options from https://github.com/alipirani88/Comparative_Genomics/tree/master/day1_afternoon
+$SAMTOOLS mpileup -ug -f $DB $OUT.bam | $BCFTOOLS call -O v -v -c -o $OUT.mpileup.vcf
+
+# ADD pass filter
+/usr/bin/java -Xmx20G -jar $GATK -T VariantFiltration -R $DB -o $OUT.filter_gatk.vcf \
+--variant $OUT.mpileup.vcf --filterExpression "FQ < 0.025 && MQ > 50 && QUAL > 100 && DP > 15" --filterName pass_filter
+
+# run SnpEff to annotate
+/usr/bin/java -Xmx20G -jar  $SNPEFF -csvStats $OUT.gatk_stats  \
+-d -no-downstream -no-upstream $SnpEffDB $OUT.filter_gatk.vcf > $OUT.filter_gatk_ann.vcf
+
+rm $OUT.1.fq $OUT.2.fq
+rm $OUT.unmarked.bam
