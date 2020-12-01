@@ -16,7 +16,7 @@ opts <-  list(
    make_option(c("-m", "--modified"), default="NA",
          help="Only link fastq files with modified time >= YYYY-MM-DD"),
    make_option(c("-p", "--adapters"), default="Illumina",
-         help="Adapter sequences, default Illumina or Nextera"),
+         help="Adapter sequences, default TruSeq or Nextera"),
    make_option(c("-r", "--run"), default="NA",
          help="Run ID in /Repository/MicroarryData, optional"),
    make_option(c("-a", "--analysis"), default="",
@@ -40,6 +40,20 @@ references are available")
      print_help(parser)
      quit(status=1)
   }
+
+# logging
+write(as.character(Sys.time()), file = "./log.txt", append = TRUE)
+write(paste("email: ", opt$email), file = "./log.txt", append = TRUE)
+write(paste("cluster: ", opt$cluster), file = "./log.txt", append = TRUE)
+write(paste("sequencing: ", opt$sequencing), file = "./log.txt", append = TRUE)
+write(paste("input: ", opt$input), file = "./log.txt", append = TRUE)
+write(paste("fastq: ", opt$fastq), file = "./log.txt", append = TRUE)
+write(paste("modified: ", opt$modified), file = "./log.txt", append = TRUE)
+write(paste("run: ", opt$run), file = "./log.txt", append = TRUE)
+write(paste("analysis: ", opt$analysis), file = "./log.txt", append = TRUE)
+write(paste("version: ", opt$version), file = "./log.txt", append = TRUE)
+write(paste("database: ", opt$database), file = "./log.txt", append = TRUE)
+write(paste("length: ", opt$length), file = "./log.txt", append = TRUE)
 
 if(file.exists( "cmd.txt")){
    message("Note: cmd.txt file already exists")
@@ -78,16 +92,23 @@ if(file.exists( "cmd.txt")){
 	   adapt1 <- "CTGTCTCTTATACACATCT"
 	   adapt2 <- "CTGTCTCTTATACACATCT"
    }else{
-	   # Illumina adapters
+	   # Illumina TruSeq adapters
 	   adapt1 <- "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA"
 	   adapt2 <- "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
+   }
+
+   # set fastq screen conf file based on host cluster
+   if(opt$cluster == "redwood"){
+       fastq_screen_conf = "/tomato/dev/data/FastQ_Screen_Genomes/redwood_fastq_screen.conf"
+   } else {
+       fastq_screen_conf = "/tomato/dev/data/FastQ_Screen_Genomes/eukrRNA/fastq_screen_rRNA.conf"
    }
 
    cmd_txt <- paste0("/home/BioApps/hciR/templates/cmd_", opt$sequencing, ".txt")
    cmd <- readr::read_lines(cmd_txt, skip=2)
    cmd <- stringr::str_replace_all(cmd, c(`@EMAIL` = opt$email, `@CLUSTER` = opt$cluster,
     `@ANALYSIS` = opt$analysis, `@LENGTH` =  opt$length, `@DIR` = tomato_dir, `@SPECIES`= species,
-    `@ASSEMBLY`= assembly ,`@VERSION` = release, `@STAR` = STAR_version, `@FASTQ` = opt$fastq,
+    `@ASSEMBLY`= assembly ,`@VERSION` = release, `@STAR` = STAR_version, `@FASTQ` = opt$fastq, `@SCREEN_CONF` = fastq_screen_conf,
      `@ADAPT1`= adapt1, `@ADAPT2`= adapt2 ))
    readr::write_lines(cmd, "cmd.txt")
     message("Created cmd.txt file for ", refdb, " star", opt$length)
