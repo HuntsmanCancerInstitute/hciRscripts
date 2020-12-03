@@ -18,6 +18,8 @@ opts <-  list(
      rat, rabbit, sheep, vervet, yeast, zebrafish"),
     make_option(c("-v", "--version"), default="100",
           help="Ensembl release, default 100"),
+   make_option(c("-p", "--adapters"), default="TruSeq",
+         help="Adapter sequences, default TruSeq or Nextera for new RiboZero kits"),
     make_option(c("-n", "--ncpu"), default="24",
           help="Number CPUs, pysano will use the maximum number, default 24"),
     make_option(c("-a", "--align"), default="Alignments",
@@ -72,6 +74,16 @@ if(release == 94) STAR_version <- "2.6.1b"
 if(release == 92) STAR_version <- "2.5.4a"
 if(release == 90) STAR_version <- "2.5.2b"
 
+# adapters
+if(tolower(opt$adapters) == "nextera"){
+   adapt1 <- "CTGTCTCTTATACACATCT"
+   adapt2 <- "CTGTCTCTTATACACATCT"
+}else{
+   # Illumina TruSeq adapters
+   adapt1 <- "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA"
+   adapt2 <- "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
+}
+
 ## fasta file name on FTP
 dna <- "toplevel"
 if(name %in% c("mouse", "human", "zebrafish")) dna <- "primary_assembly"
@@ -97,6 +109,8 @@ rmd <- stringr::str_replace_all(rmd, c(
    `@SPECIES`  = species ,
    `@LOWER_SPECIES`= tolower(species),
    `@ASSEMBLY` = assembly ,
+   `@ADAPT1`   = adapt1,
+   `@ADAPT2`   = adapt2,
    `@STAR`     = STAR_version,
    `@NCPU`     = opt$ncpu,
    `@ALIGNDIR` = opt$align  ))
