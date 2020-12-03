@@ -75,9 +75,7 @@ for(i in genome_rows){
       # link fasta for pysano
       fa <- list.files("..", pattern = "fa$")
       file.symlink(paste0("../",fa), fa)
-      system("mkdir star50")
-      system("mkdir star125")
-
+      system("mkdir star100")
 
       cat(paste0("#e chris.stubben@hci.utah.edu
 #c kingspeak_24
@@ -85,18 +83,11 @@ for(i in genome_rows){
 STAR=/tomato/dev/app/STAR/", opt$version, "/STAR
 
 $STAR   --runMode genomeGenerate \\
-        --genomeDir star50 \\
+        --genomeDir star100 \\
         --genomeFastaFiles ", fa, " \\
         --runThreadN $NCPU \\
         --sjdbGTFfile ", gtf, " \\
-        --sjdbOverhang 49
-
-$STAR   --runMode genomeGenerate \\
-       --genomeDir star125 \\
-       --genomeFastaFiles ", fa, " \\
-       --runThreadN $NCPU \\
-       --sjdbGTFfile ", gtf, " \\
-       --sjdbOverhang 124
+        --sjdbOverhang 100
 "), file="cmd.txt")
 
    ## pstart?

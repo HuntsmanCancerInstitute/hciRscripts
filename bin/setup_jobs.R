@@ -16,7 +16,7 @@ opts <-  list(
    make_option(c("-m", "--modified"), default="NA",
          help="Only link fastq files with modified time >= YYYY-MM-DD"),
    make_option(c("-p", "--adapters"), default="Illumina",
-         help="Adapter sequences, default TruSeq or Nextera"),
+         help="Adapter sequences, default TruSeq or Nextera for new RiboZero kits"),
    make_option(c("-r", "--run"), default="NA",
          help="Run ID in /Repository/MicroarryData, optional"),
    make_option(c("-a", "--analysis"), default="",
