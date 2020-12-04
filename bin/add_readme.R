@@ -16,8 +16,8 @@ opts <-  list(
     make_option(c("-d", "--database"), default="human",
           help="Reference database, default human or mouse, elephant, fly, worm, pig,
      rat, rabbit, sheep, vervet, yeast, zebrafish"),
-    make_option(c("-v", "--version"), default="100",
-          help="Ensembl release, default 100"),
+    make_option(c("-v", "--version"), default="102",
+          help="Ensembl release, default 102"),
    make_option(c("-p", "--adapters"), default="TruSeq",
          help="Adapter sequences, default TruSeq or Nextera for new RiboZero kits"),
     make_option(c("-n", "--ncpu"), default="24",
@@ -67,7 +67,8 @@ name <- x$name[n]
 species <- x$species[n]
 assembly <- x$assembly[n]
 release <- as.numeric(opt$version)
- STAR_version <- "2.7.3a"
+STAR_version <- "2.7.6a"
+if(release == 100) STAR_version <- "2.7.3a"
 if(release == 98) STAR_version <- "2.7.2c"
 if(release == 96) STAR_version <- "2.7.0f"
 if(release == 94) STAR_version <- "2.6.1b"

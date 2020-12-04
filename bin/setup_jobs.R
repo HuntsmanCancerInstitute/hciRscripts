@@ -21,8 +21,8 @@ opts <-  list(
          help="Run ID in /Repository/MicroarryData, optional"),
    make_option(c("-a", "--analysis"), default="",
          help="Save files to /Repository/AnalysisData, optional"),
-   make_option(c("-v", "--version"), default="100",
-         help="Ensembl release, default 100, version 92, 94, 96 and 98 are also available for human and mouse"),
+   make_option(c("-v", "--version"), default="102",
+         help="Ensembl release, default 102, version 92, 94, 96, 98 and 100 are also available for human and mouse"),
    make_option(c("-d", "--database"), default="human",
          help="Reference database, default human or mouse, elephant, fly, worm, pig,
      rat, rabbit, sheep, vervet, yeast, zebrafish"),
@@ -61,13 +61,14 @@ if(file.exists( "cmd.txt")){
    if( !grepl("@", opt$email )) opt$email <- paste0( opt$email, "@hci.utah.edu")
    ## STAR version should match version used to create index
    release <- as.numeric(opt$version)
-   if(!release %in% c(98, 100)) message("Note: Version may not have a reference, please check /tomato/dev/data")
-   STAR_version <- "2.7.3a"
-   if(release == 98) STAR_version <- "2.7.2c"
-   if(release == 96) STAR_version <- "2.7.0f"
-   if(release == 94) STAR_version <- "2.6.1b"
-   if(release == 92) STAR_version <- "2.5.4a"
-   if(release == 90) STAR_version <- "2.5.2b"
+   if(!release %in% c(100, 102)) message("Note: Version may not have a reference, please check /tomato/dev/data")
+   STAR_version <- "2.7.6a"
+   if(release == 100) STAR_version <- "2.7.3a"
+   if(release == 98)  STAR_version <- "2.7.2c"
+   if(release == 96)  STAR_version <- "2.7.0f"
+   if(release == 94)  STAR_version <- "2.6.1b"
+   if(release == 92)  STAR_version <- "2.5.4a"
+   if(release == 90)  STAR_version <- "2.5.2b"
 
    if( opt$analysis != "" ) opt$analysis <- paste0("#a ", opt$analysis)
    if(!opt$length %in% c("50", "125")) message("Length should be 50 or 125.  Please check if star", opt$length, " exists")
