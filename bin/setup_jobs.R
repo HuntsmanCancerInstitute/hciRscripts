@@ -7,8 +7,8 @@ opts <-  list(
          help="#e email or hci user name for pysano directive, required"),
    make_option(c("-c", "--cluster"), default="kingspeak",
          help="#c cluster name for pysano with at least 64 GB of RAM, default kingspeak"),
-   make_option(c("-s", "--sequencing"), default="single",
-         help="single, paired, novaseq, qiagen, NEB or metagenome"),
+   make_option(c("-s", "--sequencing"), default="novaseq",
+         help="single, paired, novaseq, qiagen, NEB or metagenome.  Single and paired options are for HiSeq runs"),
    make_option(c("-i", "--input"), default="NA",
          help="Input directory with Fastq files (either absolute path or relative path in current directory)"),
    make_option(c("-f", "--fastq"), default=".gz",
@@ -33,7 +33,7 @@ opts <-  list(
 parser <- OptionParser(option_list=opts, description = "
 Creates a cmd.txt file and sample directories with Fastq file links in order to run STAR,
 featureCounts and quality metrics on the CHPC clusters using pysano.  The default is to align
-single-end 50 bp reads to the latest human reference. Check /tomato/dev/data to see if older
+paied-end 50 bp reads from NovaSeq runs to the latest human reference. Check /tomato/dev/data to see if older
 references are available")
   opt <- parse_args(parser)
   if( opt$email == "NA" ){
