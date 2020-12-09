@@ -5,8 +5,8 @@ suppressPackageStartupMessages(library("optparse"))
 ## using -g returns WARNING: unknown gui ...  so no --genome option
 
 opts <-  list(
-    make_option(c("-s", "--sequencing"), default="single",
-          help="single, paired or miRNA sequencing"),
+    make_option(c("-s", "--sequencing"), default="novaseq",
+          help="single, paired, novaseq, qiagen, NEB or metagenome sequencing"),
     make_option(c("-r", "--run"), default=NULL,
           help="Run ID for report title"),
     make_option(c("-i", "--id"), default=NULL,
