@@ -8,7 +8,7 @@ opts <-  list(
    make_option(c("-c", "--cluster"), default="kingspeak",
          help="#c cluster name for pysano with at least 64 GB of RAM, default kingspeak"),
    make_option(c("-s", "--sequencing"), default="novaseq",
-         help="single, paired, novaseq, qiagen, NEB or metagenome.  Single and paired options are for HiSeq runs"),
+         help="single, paired, novaseq, miRNA_pe, miRNA_se, NEB or metagenome.  Single and paired options are for HiSeq runs. miRNA_pe for qiagen paired"),
    make_option(c("-i", "--input"), default="NA",
          help="Input directory with Fastq files (either absolute path or relative path in current directory)"),
    make_option(c("-f", "--fastq"), default=".gz",
@@ -72,7 +72,7 @@ if(file.exists( "cmd.txt")){
 
    if( opt$analysis != "" ) opt$analysis <- paste0("#a ", opt$analysis)
    if(!opt$length %in% c("50", "125")) message("Length should be 50 or 125.  Please check if star", opt$length, " exists")
-   if(!opt$sequencing %in% c("single", "paired", "qiagen", "clumpify", "novaseq",
+   if(!opt$sequencing %in% c("single", "paired", "miRNA_pe", "miRNA_se", "clumpify", "novaseq",
               "NEB", "metagenome", "metatranscriptome", "microbe", "screen")){
        stop("Sequencing should be single, paired, novaseq, qiagen, NEB, microbe, metagenome or metatranscriptome")
    }
