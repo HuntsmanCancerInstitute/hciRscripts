@@ -9,8 +9,8 @@ opts <-  list(
    make_option(c("-d", "--database"), default="human",
         help="Annotation database, default human or mouse, elephant, fly, pig,
      rat, rabbit, sheep,  worm, vervet, yeast or zebrafish"),
-   make_option(c("-v", "--version"), default="100",
-        help="Ensembl release, default 100. Earlier releases are only supported for mouse and human"),
+   make_option(c("-v", "--version"), default="102",
+        help="Ensembl release, default 102. Earlier releases are only supported for mouse and human"),
    make_option(c("-s", "--samples"), default="samples.txt",
         help="Tab-delimited file with ids in column 1 matching count column names
      and a treatment column for contrasts, default samples.txt"),
@@ -83,7 +83,7 @@ if(!opt$database %in% db){
 }
 db1 <- paste0(opt$database, opt$version)
 
-if(!opt$version %in% c("90", "92", "94", "96", "98")) message("Note: Ensembl version may not be available in hciRdata.
+if(!opt$version %in% c("100", "102")) message("Note: Ensembl version may not be available in hciRdata.
 You may need to update the gene annotation section and use read_biomart instead")
 if(is.null(opt$design)) opt$design <- opt$trt
 

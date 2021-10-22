@@ -45,12 +45,14 @@ $FASTQC -T $NCPU -f fastq $OUT.2.fq
 
 
 # STAR
+MEM=`echo "$SMGB" | awk '{print $1 * 1073741824}'`
+
 $STAR --genomeDir $INDEX \
 --readFilesIn $OUT.1.fq $OUT.2.fq \
 --runThreadN $NCPU \
 --twopassMode Basic \
 --outSAMtype BAM SortedByCoordinate \
---limitBAMsortRAM 64000000000 \
+--limitBAMsortRAM $MEM \
 --outBAMsortingBinsN 100 \
 --quantMode TranscriptomeSAM \
 --outWigType bedGraph \

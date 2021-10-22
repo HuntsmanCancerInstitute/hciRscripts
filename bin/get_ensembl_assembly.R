@@ -38,15 +38,16 @@ if(!file.exists(datadir)){
 setwd(datadir)
 # add options to STAR_ref_dbs.txt file in  /home/BioApps/hciR?
 
-#2.   Download genome
+#2.   Download genome  (new Oct 2, 2021 - use http!)
 #ftp://ftp.ensembl.org/pub/release-90/fasta/drosophila_melanogaster/dna/Drosophila_melanogaster.BDGP6.dna.toplevel.fa.gz
-ftp <- paste0("ftp://ftp.ensembl.org/pub/release-", release, "/fasta")
+ftp <- paste0("http://ftp.ensembl.org/pub/release-", release, "/fasta")
 # toplevel or primary ?
 dna <- "dna.toplevel"
 if(dir %in% c("Human", "Mouse", "Zebrafish")) dna<- "dna.primary_assembly"
  dnafile <- paste0(x$species[i], ".", x$assembly[i], ".", dna, ".fa.gz")
  ftpdir <- paste0(ftp, "/", tolower(x$species[i]), "/dna/",  dnafile)
  message( "Downloading ", dnafile)
+ options(timeout = 300)
  download.file(ftpdir, dnafile,  quiet = TRUE)
  system(paste("gunzip",  dnafile))
 

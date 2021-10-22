@@ -21,13 +21,13 @@ opts <-  list(
          help="Run ID in /Repository/MicroarryData, optional"),
    make_option(c("-a", "--analysis"), default="",
          help="Save files to /Repository/AnalysisData, optional"),
-   make_option(c("-v", "--version"), default="102",
-         help="Ensembl release, default 102, version 92, 94, 96, 98 and 100 are also available for human and mouse"),
+   make_option(c("-v", "--version"), default="104",
+         help="Ensembl release, default 104, version 92, 94, 96, 98, 100, 102 are also available for human and mouse"),
    make_option(c("-d", "--database"), default="human",
          help="Reference database, default human or mouse, elephant, fly, worm, pig,
      rat, rabbit, sheep, vervet, yeast, zebrafish"),
     make_option(c("-l", "--length"), default="50",
-       help="Read length for STAR reference, default 50 or 125")
+       help="Read length for STAR reference, default 50, 100 (human and mouse only) or 125")
 )
 
 parser <- OptionParser(option_list=opts, description = "
@@ -43,17 +43,17 @@ references are available")
 
 # logging
 write(as.character(Sys.time()), file = "./log.txt", append = TRUE)
-write(paste("email: ", opt$email), file = "./log.txt", append = TRUE)
-write(paste("cluster: ", opt$cluster), file = "./log.txt", append = TRUE)
+write(paste("email: ",    opt$email),       file = "./log.txt", append = TRUE)
+write(paste("cluster: ",  opt$cluster),     file = "./log.txt", append = TRUE)
 write(paste("sequencing: ", opt$sequencing), file = "./log.txt", append = TRUE)
-write(paste("input: ", opt$input), file = "./log.txt", append = TRUE)
-write(paste("fastq: ", opt$fastq), file = "./log.txt", append = TRUE)
-write(paste("modified: ", opt$modified), file = "./log.txt", append = TRUE)
-write(paste("run: ", opt$run), file = "./log.txt", append = TRUE)
-write(paste("analysis: ", opt$analysis), file = "./log.txt", append = TRUE)
-write(paste("version: ", opt$version), file = "./log.txt", append = TRUE)
-write(paste("database: ", opt$database), file = "./log.txt", append = TRUE)
-write(paste("length: ", opt$length), file = "./log.txt", append = TRUE)
+write(paste("input: ",    opt$input),       file = "./log.txt", append = TRUE)
+write(paste("fastq: ",    opt$fastq),       file = "./log.txt", append = TRUE)
+write(paste("modified: ", opt$modified),    file = "./log.txt", append = TRUE)
+write(paste("run: ",      opt$run),         file = "./log.txt", append = TRUE)
+write(paste("analysis: ", opt$analysis),    file = "./log.txt", append = TRUE)
+write(paste("version: ",  opt$version),     file = "./log.txt", append = TRUE)
+write(paste("database: ", opt$database),    file = "./log.txt", append = TRUE)
+write(paste("length: ",   opt$length),      file = "./log.txt", append = TRUE)
 
 if(file.exists( "cmd.txt")){
    message("Note: cmd.txt file already exists")
@@ -61,8 +61,9 @@ if(file.exists( "cmd.txt")){
    if( !grepl("@", opt$email )) opt$email <- paste0( opt$email, "@hci.utah.edu")
    ## STAR version should match version used to create index
    release <- as.numeric(opt$version)
-   if(!release %in% c(100, 102)) message("Note: Version may not have a reference, please check /tomato/dev/data")
-   STAR_version <- "2.7.6a"
+   if(!release %in% c(102, 104)) message("Note: Version may not have a reference, please check /tomato/dev/data")
+   STAR_version <- "2.7.9a"
+   if(release == 102) STAR_version <- "2.7.6a"
    if(release == 100) STAR_version <- "2.7.3a"
    if(release == 98)  STAR_version <- "2.7.2c"
    if(release == 96)  STAR_version <- "2.7.0f"
@@ -72,11 +73,13 @@ if(file.exists( "cmd.txt")){
 
    if( opt$analysis != "" ) opt$analysis <- paste0("#a ", opt$analysis)
    if(!opt$length %in% c("50", "125")) message("Length should be 50 or 125.  Please check if star", opt$length, " exists")
-   if(!opt$sequencing %in% c("single", "paired", "miRNA_pe", "miRNA_se", "clumpify", "novaseq",
+   if(!opt$sequencing %in% c("single", "paired", "miRNA_pe", "miRNA_se", "clumpify", "novaseq", "redwood_pe",
               "NEB", "metagenome", "metatranscriptome", "microbe", "screen")){
        stop("Sequencing should be single, paired, novaseq, qiagen, NEB, microbe, metagenome or metatranscriptome")
    }
    if(opt$sequencing == "novaseq") opt$sequencing <- "clumpify"
+   if(opt$sequencing == "novaseq_cat") opt$sequencing <- "clumpify_cat"
+
    x <- read.delim("/home/BioApps/hciR/STAR_ref_dbs.txt", stringsAsFactors=FALSE)
    refdb <- stringr::str_replace_all(opt$database, c(fly = "Drosophila", fruitfly = "Drosophila",
                   worm = "C_elegans", yeast = "S_cerevisiae", Homo ="Human", Mus = "Mouse"))
@@ -87,11 +90,15 @@ if(file.exists( "cmd.txt")){
    assembly <- x$assembly[n]
    tomato_dir <- x$dir[n]
    ## old assemblies
+   if(assembly == "GRCm39" & release == 104) message("Ensembl mouse version 104 uses the new GRCm39 assembly.  Add -v 102 to use GRCm38 instead")
+   if(assembly == "GRCm39" & release < 104) assembly <- "GRCm38"
    if(assembly == "GRCz11" & release == 90) assembly <- "GRCz10"
-   if(assembly == "BDGP6.28" & release == 98) assembly <- "BDGP6.22"
+   if(assembly == "BDGP6.32" & release == 102) assembly <- "BDGP6.28"
+   if(assembly == "BDGP6.32" & release == 98) assembly <- "BDGP6.22"
+
    if(tolower(opt$adapters) == "nextera"){
-	   adapt1 <- "CTGTCTCTTATACACATCT"
-	   adapt2 <- "CTGTCTCTTATACACATCT"
+	   adapt1 <- "ACTGTCTCTTATACACATCT"
+	   adapt2 <- "ACTGTCTCTTATACACATCT"
    }else{
 	   # Illumina TruSeq adapters
 	   adapt1 <- "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA"
@@ -100,7 +107,7 @@ if(file.exists( "cmd.txt")){
 
    # set fastq screen conf file based on host cluster
    if(opt$cluster == "redwood"){
-       fastq_screen_conf = "/tomato/dev/data/FastQ_Screen_Genomes/redwood_fastq_screen.conf"
+       fastq_screen_conf = "/tomato/dev/data/FastQ_Screen_Genomes/eukrRNA/redwood_fastq_screen_rRNA.conf"
    } else {
        fastq_screen_conf = "/tomato/dev/data/FastQ_Screen_Genomes/eukrRNA/fastq_screen_rRNA.conf"
    }

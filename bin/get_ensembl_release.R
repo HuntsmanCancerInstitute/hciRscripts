@@ -7,7 +7,7 @@ opts <-  list(
          help="Directory name in /tomato/dev/data.  Default is all genomes"),
    make_option(c("-r", "--release"),
           help="Ensembl release number"),
-    make_option(c("-v", "--version"), default="2.6.1b",
+    make_option(c("-v", "--version"), default="2.7.9a",
           help="STAR version number")
 )
 
@@ -25,7 +25,7 @@ if( is.null(opt$release) ){
 }
 
 release <- opt$release
-ftp <- paste0("ftp://ftp.ensembl.org/pub/release-", release, "/gtf")
+ftp <- paste0("http://ftp.ensembl.org/pub/release-", release, "/gtf")
 x <- read.delim("/home/BioApps/hciR/STAR_ref_dbs.txt", stringsAsFactors=FALSE)
 
 if(opt$dir == "all"){
