@@ -46,7 +46,6 @@ write(as.character(Sys.time()), file = "./log.txt", append = TRUE)
 write(paste("email: ",    opt$email),       file = "./log.txt", append = TRUE)
 write(paste("cluster: ",  opt$cluster),     file = "./log.txt", append = TRUE)
 write(paste("sequencing: ", opt$sequencing), file = "./log.txt", append = TRUE)
-<<<<<<< HEAD
 write(paste("input: ",    opt$input),       file = "./log.txt", append = TRUE)
 write(paste("fastq: ",    opt$fastq),       file = "./log.txt", append = TRUE)
 write(paste("modified: ", opt$modified),    file = "./log.txt", append = TRUE)
@@ -55,17 +54,6 @@ write(paste("analysis: ", opt$analysis),    file = "./log.txt", append = TRUE)
 write(paste("version: ",  opt$version),     file = "./log.txt", append = TRUE)
 write(paste("database: ", opt$database),    file = "./log.txt", append = TRUE)
 write(paste("length: ",   opt$length),      file = "./log.txt", append = TRUE)
-=======
-write(paste("input: ", opt$input), file = "./log.txt", append = TRUE)
-write(paste("fastq: ", opt$fastq), file = "./log.txt", append = TRUE)
-write(paste("modified: ", opt$modified), file = "./log.txt", append = TRUE)
-write(paste("adapters: ", opt$adapters), file = "./log.txt", append = TRUE)
-write(paste("run: ", opt$run), file = "./log.txt", append = TRUE)
-write(paste("analysis: ", opt$analysis), file = "./log.txt", append = TRUE)
-write(paste("version: ", opt$version), file = "./log.txt", append = TRUE)
-write(paste("database: ", opt$database), file = "./log.txt", append = TRUE)
-write(paste("length: ", opt$length), file = "./log.txt", append = TRUE)
->>>>>>> acff2cf9761b60cc3991fde0a4ea0eb14bee3b17
 
 if(file.exists( "cmd.txt")){
    message("Note: cmd.txt file already exists")
