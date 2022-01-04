@@ -6,8 +6,10 @@ output: html_document
 
 ```{r global_options, include=FALSE}
 knitr::opts_chunk$set(warning=FALSE, comment="# ", collapse=TRUE)
+rm(list=ls())
 library(hciR)
 library(readr)
+library(hciRdata)
 ```
 
 This guide follows the [Bioconductor RNA-Seq workflow] to find differentially expressed
@@ -74,7 +76,6 @@ Load the @name annotations from Ensembl version @version in the [hciRdata] packa
 and get the DESeq results using a @fdr% false discovery rate (FDR).
 
 ```{r results_all}
-library(hciRdata)
 res <- results_all(dds, @db, alpha = @padj, vs = "@vs", simplify = FALSE)
 ```
 
@@ -90,7 +91,7 @@ Select the top 20 up- and down-regulated genes and cluster the scaled rlog value
 heatmap represent the number of standard deviations from the mean rlog value.
 
 ```{r gene_heatmap1, fig.width=@figwidth, fig.height=6}
-x <- top_counts( res[[1]], rld, sort_fc = TRUE, padj=1)
+x <- top_counts(res[[1]], rld, sort_fc = TRUE, padj=1)
 plot_genes(x, "@trt", scale="row", fontsize_row=8)
 ```
 <br>
@@ -98,7 +99,7 @@ plot_genes(x, "@trt", scale="row", fontsize_row=8)
 Cluster the top 500 genes sorted by p-value and scale by rows.
 
 ```{r gene_heatmap2, fig.width=@figwidth, fig.height=6}
-x <- top_counts( res[[1]], rld, top=500, padj=1)
+x <- top_counts(res[[1]], rld, top=500, padj=1)
 plot_genes(x, "@trt", scale="row", show_rownames=FALSE)
 ```
 
