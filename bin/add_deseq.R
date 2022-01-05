@@ -51,6 +51,7 @@ cmdArgs <- commandArgs(trailingOnly = FALSE)
 n <- grep("--file=", cmdArgs)
 install_dir <- normalizePath(gsub("--file=", "", cmdArgs[n]))
 install_dir <- gsub( "/[^/]*$", "", install_dir)
+install_dir <- gsub("bin", "", install_dir)
 
 ## TO DO - allow 2 or more columns for trt (and paste together in design formula ~trt + cell)
 
@@ -87,7 +88,7 @@ if(!opt$version %in% c("100", "102")) message("Note: Ensembl version may not be 
 You may need to update the gene annotation section and use read_biomart instead")
 if(is.null(opt$design)) opt$design <- opt$trt
 
-rmd <- readr::read_lines(paste0(install_dir, "/templates/DESeq_template.Rmd"))
+rmd <- readr::read_lines(paste0(install_dir, "templates/DESeq_template.Rmd"))
 
 ## if null, delete line 23  with sample$@trt <- factor(samples$@trt, levels = @levels)
 if(is.null(opt$levels))  rmd <- rmd[!grepl("^samples\\$@trt", rmd)]
