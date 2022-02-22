@@ -1,27 +1,21 @@
-## Template 'cmd.txt' for Cell Ranger (10x Genomics) 'vdj'.  Run setup_cellranger.R -v to replace @VARIABLES
+# Template 'cmd.txt' for Cell Ranger (10x Genomics) 'vdj'.  Run setup_cellranger.R -v to replace @VARIABLES
 
-#e @EMAIL -b
+#e @EMAIL
 #c @CLUSTER
 #t 24
 set -e
 
-# Limit the memory to 120G
-SLURM_MEM_PER_NODE=120000
+# Transcriptome reference path
+INDEX=@REFVERSION
 
-##  Transcriptome reference
-ORG=/tomato/dev/data/@DIR/@ASSEMBLY
-DB=$ORG/10x_star
-INDEX=$DB/@REFVERSION
+# Cell Ranger 
+CELLRANGER=/tomato/dev/app/10X/cellranger-6.0.1/cellranger
 
-## Cell Ranger 
-module load cellranger/5.0.0
-
-
-## Input
+# Input paths
 FASTQS=`ls -d  MKFASTQ_*`
 SAMPLE=$(echo $FASTQS | cut -d'_' -f 2)
 
-cellranger vdj --id=$SAMPLE \
+$CELLRANGER vdj --id=$SAMPLE \
 --fastqs=$FASTQS \
 --reference=$INDEX \
 --jobmode=local \

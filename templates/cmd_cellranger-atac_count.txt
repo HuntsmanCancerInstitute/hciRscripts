@@ -1,21 +1,17 @@
+# Template 'cmd.txt' for Cellranger (10X Genomics) 'atat-count'. Run 'setup_cellranger_count' to replace @VARIABLES
+
 #e @EMAIL 
 #c @CLUSTER 
 #t 24
 set -e
 
-# Limit the memory to 120G
-SLURM_MEM_PER_NODE=120000
-echo $SLURM_MEM_PER_NODE
+# Transcriptome reference path
+INDEX=@REFVERSION
 
-##  Transcriptome reference
-ORG=/tomato/dev/data/Human/Hg19/
-DB=$ORG/10x_atac
-INDEX=$DB/@REFVERSION
+# Cellranger ATAC path
+CRATAC=/tomato/dev/app/10X/cellranger-atac-2.0.0/cellranger-atac
 
-## Cell Ranger ATAC
-CRATAC=/uufs/chpc.utah.edu/common/home/u0672406/BioApps/cellranger-atac-1.0.1/cellranger-atac
-
-## Input
+# Input paths
 FASTQS=`ls -d  MKFASTQ_*`
 SAMPLE=$(echo $FASTQS | cut -d'_' -f 2)
 
