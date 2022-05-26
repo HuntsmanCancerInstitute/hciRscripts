@@ -51,7 +51,7 @@ if(is.null(opt$id)) opt$id <- gsub("R.*", "X1", opt$run)
 ## if fastq is missing, search /Repository/MicroarrayData
 if(is.null(opt$fastq)){
    opt$fastq <- Sys.glob( paste0("/Repository/MicroarrayData/*/", opt$run, "/Fastq/", opt$id, "_*gz"))
-   if(length(opt$fastq) == 0) stop("No match to fastq files in /Repository/MicroarrayData, please add --fastq option")
+   if(length(opt$fastq) == 0) stop("No match to ", opt$id, " fastq files in /Repository/MicroarrayData, please add --id (if no X1) or --fastq options")
    opt$fastq <- gsub(".*/", "", opt$fastq)  # remove path
    ## combine paried end into "fastq1.fq fastq2.fq"
    if(length(opt$fastq) == 2 ) opt$fastq <- paste(opt$fastq, collapse= " @NEWLINE ")
@@ -61,7 +61,10 @@ sjdb <- as.numeric(opt$length) -1
 
 ## Load STAR reference table
 x <- read.delim( paste0( install_dir, "/STAR_ref_dbs.txt"), stringsAsFactors=FALSE)
-n <- grep(opt$database, x$name, ignore=TRUE)
+refdb <- stringr::str_replace_all(opt$database, c(fly = "Drosophila", fruitfly = "Drosophila",
+               worm = "C_elegans", yeast = "S_cerevisiae", Homo ="Human", Mus = "Mouse"))
+## two pigs!
+n <- grep(paste0("^", refdb), x$dir, ignore=TRUE)
 if(length(n)!=1) stop("Database should match human, mouse, fly, worm, pig, rat, rabbit, sheep, yeast or zebrafish.")
 name <- x$name[n]
 species <- x$species[n]

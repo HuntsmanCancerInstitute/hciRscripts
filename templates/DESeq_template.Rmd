@@ -46,7 +46,7 @@ transforms (rlog) for sample visualizations.
 
 ```{r run_DESeq}
 dds <- deseq_from_tibble(counts, samples, design = ~ @trt)
-rld <- r_log(dds)
+rld <- DESeq2::rlog(dds)
 ```
 
 ### PCA plot

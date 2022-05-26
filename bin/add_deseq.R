@@ -9,8 +9,8 @@ opts <-  list(
    make_option(c("-d", "--database"), default="human",
         help="Annotation database, default human or mouse, elephant, fly, pig,
      rat, rabbit, sheep,  worm, vervet, yeast or zebrafish"),
-   make_option(c("-v", "--version"), default="102",
-        help="Ensembl release, default 102. Earlier releases are only supported for mouse and human"),
+   make_option(c("-v", "--version"), default="104",
+        help="Ensembl release, default 104. Earlier releases may be supported for mouse and human"),
    make_option(c("-s", "--samples"), default="samples.txt",
         help="Tab-delimited file with ids in column 1 matching count column names
      and a treatment column for contrasts, default samples.txt"),
@@ -45,12 +45,14 @@ if(is.null(opt$run)){
 if(file.exists("DESeq.Rmd")) stop("DESeq.Rmd file already exists")
 
 # Path to hciR script
-## https://stackoverflow.com/questions/1815606/rscript-determine-path-of-the-executing-script
+## https://stackoverflow.com/questions/1815606/determine-path-of-the-executing-script
 
 cmdArgs <- commandArgs(trailingOnly = FALSE)
 n <- grep("--file=", cmdArgs)
 install_dir <- normalizePath(gsub("--file=", "", cmdArgs[n]))
-install_dir <- gsub( "/[^/]*$", "", install_dir)
+# drop bin/file.R
+install_dir <- gsub( "/bin/[^/]*$", "", install_dir)
+
 
 ## TO DO - allow 2 or more columns for trt (and paste together in design formula ~trt + cell)
 
@@ -83,7 +85,7 @@ if(!opt$database %in% db){
 }
 db1 <- paste0(opt$database, opt$version)
 
-if(!opt$version %in% c("100", "102")) message("Note: Ensembl version may not be available in hciRdata.
+if(!opt$version %in% c("102", "104")) message("Note: Ensembl version may not be available in hciRdata.
 You may need to update the gene annotation section and use read_biomart instead")
 if(is.null(opt$design)) opt$design <- opt$trt
 

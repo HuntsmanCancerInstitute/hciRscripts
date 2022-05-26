@@ -83,8 +83,8 @@ if(file.exists( "cmd.txt")){
    x <- read.delim("/home/BioApps/hciR/STAR_ref_dbs.txt", stringsAsFactors=FALSE)
    refdb <- stringr::str_replace_all(opt$database, c(fly = "Drosophila", fruitfly = "Drosophila",
                   worm = "C_elegans", yeast = "S_cerevisiae", Homo ="Human", Mus = "Mouse"))
-
-   n <- grep(refdb, x$dir, ignore=TRUE)
+   ## two pigs!
+   n <- grep(paste0("^", refdb), x$dir, ignore=TRUE)
    if(length(n)!=1) stop("Database should match human, mouse, elephant, fly, worm, pig, rat, rabbit, sheep, vervet, yeast or zebrafish.")
    species <- x$species[n]
    assembly <- x$assembly[n]
